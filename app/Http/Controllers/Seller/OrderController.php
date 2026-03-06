@@ -13,8 +13,12 @@ class OrderController extends Controller
     {
         $umkm = Auth::user()->umkm;
 
-        if (!$umkm) {
+        if (! $umkm) {
             abort(403, 'UMKM belum terdaftar.');
+        }
+
+        if (! $umkm->is_verified) {
+            abort(403, 'UMKM belum diverifikasi oleh admin.');
         }
 
         return $umkm;

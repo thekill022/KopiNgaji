@@ -13,6 +13,11 @@ class DashboardController extends Controller
         $user = Auth::user();
         $umkm = $user->umkm;
 
+        // let owner know when their UMKM still awaiting verification
+        if ($umkm && ! $umkm->is_verified) {
+            session()->flash('warning', 'UMKM Anda belum diverifikasi oleh admin.');
+        }
+
         $stats = [
             'product_count' => $umkm ? $umkm->products()->count() : 0,
             'order_count' => $umkm ? $umkm->orders()->count() : 0,

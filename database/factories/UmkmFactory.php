@@ -25,6 +25,7 @@ class UmkmFactory extends Factory
             'platform_fee_type' => $feeType,
             'platform_fee_rate' => $feeType === 'percentage' ? fake()->randomFloat(2, 1, 15) : 0,
             'platform_fee_flat' => $feeType === 'flat' ? fake()->randomFloat(2, 1000, 10000) : 0,
+            'is_verified' => fake()->boolean(50),
         ];
     }
 }

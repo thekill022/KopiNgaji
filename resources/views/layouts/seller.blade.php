@@ -1,53 +1,75 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }} - Seller</title>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <title>{{ config('app.name', 'KopiNgaji') }} - Seller</title>
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-            @include('layouts.seller-navigation')
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white dark:bg-gray-800 shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-            <!-- Flash Messages -->
-            @if(session('success'))
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                        {{ session('success') }}
-                    </div>
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+
+<body class="font-sans antialiased text-slate-800 bg-slate-50 selection:bg-indigo-500 selection:text-white">
+    <div class="min-h-screen bg-[#f8fafc] flex flex-col">
+        <!-- Main Navigation for Seller -->
+        @include('layouts.seller-navigation')
+
+        <!-- Page Heading w/ Enhanced Style -->
+        @isset($header)
+            <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-30">
+                <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+                    {{ $header }}
                 </div>
-            @endif
+            </header>
+        @endisset
 
-            @if(session('error'))
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                        {{ session('error') }}
-                    </div>
+         <!-- Flash Messages -->
+        @if(session('success'))
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6">
+                <div class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-4 rounded-lg shadow-sm flex items-center shadow-[0_4px_15px_-5px_#10b98150] transition-all transform hover:-translate-y-1">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-xl mr-3"></i>
+                    <p class="font-medium">{{ session('success') }}</p>
                 </div>
-            @endif
+            </div>
+        @endif
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
-    </body>
+        @if(session('error'))
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6">
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-lg shadow-sm flex items-center shadow-[0_4px_15px_-5px_#ef444450] transition-all transform hover:-translate-y-1">
+                    <i class="fa-solid fa-circle-exclamation text-red-500 text-xl mr-3"></i>
+                    <p class="font-medium">{{ session('error') }}</p>
+                </div>
+            </div>
+        @endif
+
+        <!-- Main Content -->
+        <main class="flex-grow w-full relative z-10 pb-12 mt-4">
+            {{ $slot }}
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-slate-200 mt-auto py-6 text-center text-slate-500 text-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center gap-2 mb-4 md:mb-0">
+                    <i class="fa-solid fa-mug-hot text-indigo-500 text-xl"></i>
+                    <span class="font-semibold text-slate-700 text-lg">KopiNgaji <span class="text-indigo-600 text-sm ml-1">Seller</span></span>
+                </div>
+                <div>
+                     &copy; {{ date('Y') }} KopiNgaji Platform. All rights reserved.
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+
 </html>

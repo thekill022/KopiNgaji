@@ -15,8 +15,12 @@ class ProductController extends Controller
     {
         $umkm = Auth::user()->umkm;
 
-        if (!$umkm) {
+        if (! $umkm) {
             abort(403, 'UMKM belum terdaftar.');
+        }
+
+        if (! $umkm->is_verified) {
+            abort(403, 'UMKM belum diverifikasi oleh admin.');
         }
 
         return $umkm;
@@ -138,22 +142,29 @@ class ProductController extends Controller
 
         // Handle new image uploads
         if ($request->hasFile('images')) {
-            $currentMaxSort = $product->images()->max('sort_order') ?? -1;
+            // delete previous images from storage & database (we treat new upload as replacement)
+            foreach ($product->images as $oldImage) {
+                Storage::disk('public')->delete($oldImage->image_url);
+                $oldImage->delete();
+            }
+            if ($product->image_url) {
+                Storage::disk('public')->delete($product->image_url);
+                $product->update(['image_url' => null]);
+            }
+
+            $currentMaxSort = -1; // starting fresh
 
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('products', 'public');
 
                 $product->images()->create([
                     'image_url' => $path,
-                    'sort_order' => $currentMaxSort + $index + 1,
+                    'sort_order' => $index,
                 ]);
-            }
 
-            // Update thumbnail if no thumbnail exists
-            if (!$product->image_url) {
-                $firstImage = $product->images()->orderBy('sort_order')->first();
-                if ($firstImage) {
-                    $product->update(['image_url' => $firstImage->image_url]);
+                // first uploaded image becomes thumbnail
+                if ($index === 0) {
+                    $product->update(['image_url' => $path]);
                 }
             }
         }

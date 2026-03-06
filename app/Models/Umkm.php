@@ -15,6 +15,7 @@ class Umkm extends Model
     protected $casts = [
         'platform_fee_rate' => 'decimal:2',
         'platform_fee_flat' => 'decimal:2',
+        'is_verified' => 'boolean',
     ];
 
     public function owner()
@@ -31,5 +32,4 @@ class Umkm extends Model
     {
         return $this->hasMany(Order::class);
     }
-
 }
