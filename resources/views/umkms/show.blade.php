@@ -43,6 +43,13 @@
                     </div>
                 </div>
             </div>
+            <!-- Report Link -->
+            <div class="pb-4 pt-2 self-end">
+                <a href="{{ route('reports.create', ['umkm_id' => $umkm->id]) }}"
+                   class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-red-500 transition-colors font-medium">
+                    <i class="fa-solid fa-flag"></i> Laporkan UMKM ini
+                </a>
+            </div>
         </div>
     </div>
 

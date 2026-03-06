@@ -5,6 +5,7 @@ use App\Http\Controllers\Seller\DashboardController;
 use App\Http\Controllers\Seller\UmkmController;
 use App\Http\Controllers\Seller\ProductController;
 use App\Http\Controllers\Seller\OrderController;
+use App\Http\Controllers\Seller\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,8 +32,20 @@ Route::middleware(['auth', 'verified', 'role:BUYER'])->group(function () {
     Route::put('/cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
     
+    Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
+    
+    Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    
     Route::get('/products/{product}', [\App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+    Route::get('/reports/create', [\App\Http\Controllers\ReportController::class, 'create'])->name('reports.create');
+    Route::post('/reports', [\App\Http\Controllers\ReportController::class, 'store'])->name('reports.store');
 });
+
+// Doku Callback & Redirect endpoints (public)
+Route::post('/doku/notify', [\App\Http\Controllers\OrderController::class, 'dokuNotify'])->name('doku.notify');
+Route::get('/doku/redirect', [\App\Http\Controllers\OrderController::class, 'dokuRedirect'])->name('doku.redirect');
 // Seller Routes
 Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -47,8 +60,11 @@ Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('s
     Route::delete('product-images/{productImage}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/scan/qr', [OrderController::class, 'scan'])->name('orders.scan');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+
+    Route::resource('withdrawals', WithdrawalController::class)->only(['index', 'create', 'store']);
 });
 
 Route::middleware('auth')->group(function () {

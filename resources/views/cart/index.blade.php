@@ -115,10 +115,10 @@
                         </div>
                         
                         <!-- Note about checkout -->
-                        <button class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-center shadow-lg shadow-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all flex justify-center items-center gap-2">
+                        <a href="{{ route('checkout.index') }}" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-center shadow-lg shadow-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all flex justify-center items-center gap-2">
                             Lanjut ke Pembayaran
                             <i class="fa-solid fa-arrow-right"></i>
-                        </button>
+                        </a>
                         
                         <p class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1 outline-none">
                             <i class="fa-solid fa-lock text-[10px]"></i> Transaksi aman

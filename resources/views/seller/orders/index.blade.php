@@ -1,12 +1,24 @@
 <x-seller-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Pesanan') }}
-        </h2>
+        <div class="flex items-center gap-3">
+            <h2 class="font-bold text-2xl text-white leading-tight flex items-center gap-3">
+                <i class="fa-solid fa-boxes-packing text-indigo-200"></i>
+                {{ __('Pesanan') }}
+            </h2>
+        </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 mb-6 gap-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    Kelola Pesanan
+                </h2>
+                <a href="{{ route('seller.orders.scan') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors shadow-sm">
+                    <i class="fa-solid fa-qrcode"></i> Scan QR Pembeli
+                </a>
+            </div>
+
             <!-- Status Tabs -->
             <div class="mb-6 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-700">

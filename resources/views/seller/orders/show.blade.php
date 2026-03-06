@@ -1,10 +1,11 @@
 <x-seller-layout>
     <x-slot name="header">
         <div class="flex items-center gap-3">
-            <a href="{{ route('seller.orders.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            <a href="{{ route('seller.orders.index') }}" class="text-indigo-200 hover:text-white transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
             </a>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            <h2 class="font-bold text-2xl text-white leading-tight flex items-center gap-3">
+                <i class="fa-solid fa-receipt text-indigo-200"></i>
                 Pesanan #{{ $order->id }}
             </h2>
         </div>
@@ -117,30 +118,39 @@
 
             <!-- Action Buttons -->
             @if(in_array($order->status, ['PENDING', 'PAID']))
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aksi</h3>
-                    <div class="flex flex-wrap gap-3">
-                        @if($order->status === 'PAID')
-                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Yakin ingin menyelesaikan pesanan ini?')">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="COMPLETED">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                    ✓ Selesaikan Pesanan
-                                </button>
-                            </form>
-                        @endif
+                @php
+                    $canComplete = request('scanned') === 'true' && ($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'));
+                    $canCancel = $order->payment_method === 'CASH' && $order->status === 'PENDING';
+                @endphp
+                
+                @if($canComplete || $canCancel)
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aksi</h3>
+                        <div class="flex flex-wrap gap-3">
+                            @if($canComplete)
+                                <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Yakin ingin menyelesaikan pesanan ini?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="COMPLETED">
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                        ✓ Selesaikan Pesanan
+                                    </button>
+                                </form>
+                            @endif
 
-                        <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?')">
-                            @csrf
-                            @method('PATCH')
-                            <input type="hidden" name="status" value="CANCELLED">
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                ✕ Batalkan Pesanan
-                            </button>
-                        </form>
+                            @if($canCancel)
+                                <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="CANCELLED">
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                                        ✕ Batalkan Pesanan
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @endif
             @endif
         </div>
     </div>

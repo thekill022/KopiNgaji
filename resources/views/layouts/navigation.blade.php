@@ -70,6 +70,13 @@
                              <p class="text-xs text-slate-500 font-medium">Masuk sebagai</p>
                              <p class="text-sm font-semibold text-slate-800 truncate">{{ Auth::user()->email }}</p>
                         </div>
+                        
+                        @if(Auth::user()->role === 'BUYER')
+                            <x-dropdown-link :href="route('orders.index')" class="flex items-center gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 font-medium">
+                                <i class="fa-solid fa-clipboard-list w-4"></i> {{ __('Pesanan Saya') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <x-dropdown-link :href="route('profile.edit')" class="flex items-center gap-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 font-medium">
                             <i class="fa-regular fa-user w-4"></i> {{ __('Profile Settings') }}
                         </x-dropdown-link>

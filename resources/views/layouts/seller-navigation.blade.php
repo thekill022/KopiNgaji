@@ -30,6 +30,9 @@
                     <x-nav-link :href="route('seller.orders.index')" :active="request()->routeIs('seller.orders.*')">
                         {{ __('Pesanan') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('seller.withdrawals.index')" :active="request()->routeIs('seller.withdrawals.*')">
+                        {{ __('Penarikan Dana') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -107,6 +110,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('seller.orders.index')" :active="request()->routeIs('seller.orders.*')">
                 {{ __('Pesanan') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('seller.withdrawals.index')" :active="request()->routeIs('seller.withdrawals.*')">
+                {{ __('Penarikan Dana') }}
             </x-responsive-nav-link>
         </div>
 

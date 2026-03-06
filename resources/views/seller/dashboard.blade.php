@@ -91,6 +91,36 @@
                     {{ $stats['completed_orders'] }}
                 </div>
             </div>
+
+            <!-- Total Revenue -->
+            <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl shadow-lg border border-indigo-400 p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:-translate-y-1 transition-transform cursor-pointer col-span-1 md:col-span-2 lg:col-span-2">
+                <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                <div class="absolute left-0 bottom-0 w-24 h-24 bg-white/10 rounded-full -translate-x-1/2 translate-y-1/2"></div>
+                <div class="text-indigo-100 font-bold text-sm tracking-wider uppercase mb-1 z-10 w-full flex items-center justify-between">
+                    <span>Total Pendapatan (Selesai)</span>
+                    <i class="fa-solid fa-sack-dollar text-xl opacity-80"></i>
+                </div>
+                <div class="text-4xl lg:text-5xl font-extrabold text-white mt-4 mb-2 z-10 w-full text-left font-mono">
+                    Rp {{ number_format($stats['total_revenue'], 0, ',', '.') }}
+                </div>
+            </div>
+
+            <!-- Available Balance -->
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg border border-emerald-400 p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:-translate-y-1 transition-transform cursor-pointer col-span-1 md:col-span-2 lg:col-span-2">
+                <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                <div class="text-emerald-50 font-bold text-sm tracking-wider uppercase mb-1 z-10 w-full flex items-center justify-between">
+                    <span>Saldo Penarikan Tersedia</span>
+                    <i class="fa-solid fa-wallet text-xl opacity-80"></i>
+                </div>
+                <div class="text-4xl lg:text-5xl font-extrabold mt-4 mb-2 z-10 w-full text-left font-mono">
+                    Rp {{ number_format($stats['available_balance'], 0, ',', '.') }}
+                </div>
+                <div class="mt-4 w-full z-10">
+                    <a href="{{ route('seller.withdrawals.index') }}" class="inline-block bg-white/20 hover:bg-white/30 text-sm font-bold py-2 px-4 rounded-full transition-colors backdrop-blur-sm">
+                        <i class="fa-solid fa-money-bill-transfer mr-1"></i> Tarik Dana
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Actions -->
