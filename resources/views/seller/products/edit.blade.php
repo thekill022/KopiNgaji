@@ -1,8 +1,14 @@
 <x-seller-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Edit Produk') }}
-        </h2>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('seller.products.index') }}" class="text-indigo-200 hover:text-white transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h2 class="font-bold text-2xl text-white leading-tight flex items-center gap-3">
+                <i class="fa-solid fa-pen-to-square text-indigo-200"></i>
+                {{ __('Edit Produk') }}
+            </h2>
+        </div>
     </x-slot>
 
     <div class="py-12">

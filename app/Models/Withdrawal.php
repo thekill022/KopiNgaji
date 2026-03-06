@@ -13,7 +13,11 @@ class Withdrawal extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'                  => 'decimal:2',
+        'gross_amount'            => 'decimal:2',
+        'platform_fee_deduction'  => 'decimal:2',
+        'admin_fee_amount'        => 'decimal:2',
+        'net_disbursed'           => 'decimal:2',
     ];
 
     public function owner()

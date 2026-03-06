@@ -32,7 +32,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-0">
                 
                 <!-- Product Image Section -->
-                <div class="bg-slate-50 p-8 flex items-center justify-center relative min-h-[400px]">
+                <div class="bg-slate-50 relative min-h-[400px] md:min-h-full overflow-hidden">
                     @if($product->is_preorder)
                         <div class="absolute top-6 left-6 z-10">
                             <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">PRE-ORDER</span>
@@ -40,9 +40,9 @@
                     @endif
                     
                     @if($product->image_url)
-                        <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->name }}" class="max-w-full h-auto object-cover rounded-xl shadow-md transform hover:scale-105 transition-transform duration-500">
+                        <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-500">
                     @else
-                        <div class="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                        <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-100">
                             <i class="fa-solid fa-image text-8xl mb-4"></i>
                             <span class="text-lg font-medium">Gambar Tidak Tersedia</span>
                         </div>
@@ -106,14 +106,27 @@
                                 </div>
                             </div>
                             
-                            <div class="w-full sm:w-2/3 sm:pt-6">
-                                <button type="submit" @disabled($product->stock < 1) class="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold py-3.5 px-6 rounded-xl hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-100 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+                            <div class="w-full sm:w-2/3 flex flex-col gap-3 sm:pt-6">
+                                <button type="submit" name="action" value="cart" @disabled($product->stock < 1) class="w-full flex items-center justify-center gap-2 bg-white text-indigo-600 border-2 border-indigo-600 font-bold py-3.5 px-6 rounded-xl hover:bg-indigo-50 focus:ring-4 focus:ring-indigo-100 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
                                     <i class="fa-solid fa-cart-shopping"></i>
                                     Tambah ke Keranjang
+                                </button>
+                                <button type="submit" name="action" value="buy_now" @disabled($product->stock < 1) class="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold py-3.5 px-6 rounded-xl hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-100 transition-all shadow-md shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+                                    <i class="fa-solid fa-bag-shopping"></i>
+                                    Belanja Sekarang
                                 </button>
                             </div>
                         </div>
                     </form>
+
+                    <!-- Report Link -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <a href="{{ route('reports.create', ['product_id' => $product->id]) }}" 
+                           class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-red-500 transition-colors font-medium">
+                            <i class="fa-solid fa-flag"></i>
+                            Laporkan produk ini
+                        </a>
+                    </div>
 
                 </div>
             </div>

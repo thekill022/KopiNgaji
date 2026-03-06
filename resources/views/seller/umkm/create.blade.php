@@ -1,6 +1,7 @@
 <x-seller-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-bold text-2xl text-white leading-tight flex items-center gap-3">
+            <i class="fa-solid fa-store text-indigo-200"></i>
             {{ __('Daftar UMKM') }}
         </h2>
     </x-slot>

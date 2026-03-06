@@ -53,6 +53,12 @@ class OrderController extends Controller
         return view('seller.orders.index', compact('orders', 'statusCounts'));
     }
 
+    public function scan()
+    {
+        $umkm = $this->getUmkm();
+        return view('seller.orders.scan');
+    }
+
     public function show(Order $order)
     {
         $umkm = $this->getUmkm();
@@ -82,8 +88,8 @@ class OrderController extends Controller
 
         // Validate allowed transitions
         $allowed = match ($order->status) {
-            'PENDING' => ['CANCELLED'],
-            'PAID' => ['COMPLETED', 'CANCELLED'],
+            'PENDING' => ($order->payment_method === 'CASH') ? ['COMPLETED', 'CANCELLED'] : ['COMPLETED'],
+            'PAID' => ['COMPLETED'],
             default => [],
         };
 
