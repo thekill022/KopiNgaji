@@ -258,5 +258,32 @@
 
         amountInput.addEventListener('input', updateBreakdown);
         updateBreakdown();
+
+        // Form validation
+        document.getElementById('withdrawal-form').addEventListener('submit', function(e) {
+            document.querySelectorAll('.js-error').forEach(el => el.remove());
+            let valid = true;
+            function addError(el, msg) {
+                const span = document.createElement('p');
+                span.className = 'js-error text-red-500 text-sm mt-1';
+                span.textContent = msg;
+                el.parentElement.appendChild(span);
+            }
+
+            const amount = parseFloat(amountInput.value) || 0;
+            if (!amountInput.value || amount < 50000) { addError(amountInput, 'Minimal penarikan Rp 50.000.'); valid = false; }
+            else if (amount > {{ max(50000, $availableBalance) }}) { addError(amountInput, 'Saldo tidak mencukupi.'); valid = false; }
+
+            const accountName = document.getElementById('account_name');
+            if (!accountName.value.trim()) { addError(accountName, 'Nama pemilik rekening wajib diisi.'); valid = false; }
+
+            const bankName = document.getElementById('bank_name');
+            if (!bankName.value) { addError(bankName, 'Pilih bank atau e-wallet tujuan.'); valid = false; }
+
+            const bankAccount = document.getElementById('bank_account');
+            if (!bankAccount.value.trim()) { addError(bankAccount, 'Nomor rekening/HP wajib diisi.'); valid = false; }
+
+            if (!valid) e.preventDefault();
+        });
     </script>
 </x-seller-layout>

@@ -101,4 +101,56 @@
             </div>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            clearErrors();
+            let valid = true;
+
+            const name = document.getElementById('name');
+            if (!name.value.trim()) { showError(name, 'Nama produk wajib diisi.'); valid = false; }
+            else if (name.value.trim().length > 255) { showError(name, 'Nama produk maksimal 255 karakter.'); valid = false; }
+
+            const price = document.getElementById('price');
+            if (!price.value || parseFloat(price.value) < 0) { showError(price, 'Harga jual harus minimal 0.'); valid = false; }
+
+            const costPrice = document.getElementById('cost_price');
+            if (!costPrice.value || parseFloat(costPrice.value) < 0) { showError(costPrice, 'Harga modal harus minimal 0.'); valid = false; }
+
+            const discount = document.getElementById('discount');
+            if (discount.value && parseFloat(discount.value) < 0) { showError(discount, 'Diskon tidak boleh negatif.'); valid = false; }
+
+            const stock = document.getElementById('stock');
+            if (!stock.value || parseInt(stock.value) < 0 || !Number.isInteger(Number(stock.value))) { showError(stock, 'Stok harus berupa bilangan bulat minimal 0.'); valid = false; }
+
+            const images = document.getElementById('images');
+            if (images.files.length > 5) { showError(images, 'Maksimal 5 gambar.'); valid = false; }
+            else {
+                for (const file of images.files) {
+                    const validTypes = ['image/jpeg','image/png','image/jpg','image/webp'];
+                    if (!validTypes.includes(file.type)) { showError(images, 'Format gambar harus JPEG, PNG, JPG, atau WebP.'); valid = false; break; }
+                    if (file.size > 2 * 1024 * 1024) { showError(images, 'Setiap gambar maksimal 2MB.'); valid = false; break; }
+                }
+            }
+
+            if (!valid) e.preventDefault();
+        });
+
+        function showError(el, msg) {
+            const existing = el.parentElement.querySelector('.js-error');
+            if (existing) return;
+            const span = document.createElement('p');
+            span.className = 'js-error text-red-500 text-sm mt-1';
+            span.textContent = msg;
+            el.parentElement.appendChild(span);
+            el.classList.add('!border-red-400');
+        }
+        function clearErrors() {
+            document.querySelectorAll('.js-error').forEach(el => el.remove());
+            document.querySelectorAll('.\\!border-red-400').forEach(el => el.classList.remove('!border-red-400'));
+        }
+    });
+    </script>
 </x-seller-layout>

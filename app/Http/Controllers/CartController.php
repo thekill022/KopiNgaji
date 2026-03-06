@@ -46,6 +46,26 @@ class CartController extends Controller
         return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang.');
     }
 
+    public function bulkUpdate(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*' => 'required|integer|min:1',
+        ]);
+
+        foreach ($request->items as $itemId => $quantity) {
+            $cartItem = CartItem::whereHas('cart', function($q) {
+                $q->where('user_id', auth()->id());
+            })->find($itemId);
+
+            if ($cartItem) {
+                $cartItem->update(['quantity' => $quantity]);
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
     public function update(Request $request, $id)
     {
         $request->validate([

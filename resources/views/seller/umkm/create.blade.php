@@ -39,4 +39,28 @@
             </div>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('form').addEventListener('submit', function(e) {
+            document.querySelectorAll('.js-error').forEach(el => el.remove());
+            let valid = true;
+            const name = document.getElementById('name');
+            if (!name.value.trim()) {
+                const span = document.createElement('p');
+                span.className = 'js-error text-red-500 text-sm mt-1';
+                span.textContent = 'Nama UMKM wajib diisi.';
+                name.parentElement.appendChild(span);
+                valid = false;
+            } else if (name.value.trim().length > 255) {
+                const span = document.createElement('p');
+                span.className = 'js-error text-red-500 text-sm mt-1';
+                span.textContent = 'Nama UMKM maksimal 255 karakter.';
+                name.parentElement.appendChild(span);
+                valid = false;
+            }
+            if (!valid) e.preventDefault();
+        });
+    });
+    </script>
 </x-seller-layout>

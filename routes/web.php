@@ -29,6 +29,7 @@ Route::get('/umkms/{umkm}', [\App\Http\Controllers\UmkmController::class, 'show'
 Route::middleware(['auth', 'verified', 'role:BUYER'])->group(function () {
     Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
     Route::post('/cart', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.store');
+    Route::put('/cart/bulk-update', [\App\Http\Controllers\CartController::class, 'bulkUpdate'])->name('cart.bulk-update');
     Route::put('/cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
     

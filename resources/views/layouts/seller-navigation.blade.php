@@ -5,8 +5,13 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('seller.dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+                    <a href="{{ route('seller.dashboard') }}" class="flex items-center gap-2 group">
+                        <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 transition-colors duration-300">
+                            <i class="fa-solid fa-mug-hot text-xl text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
+                        </div>
+                        <span class="font-bold text-xl tracking-tight text-slate-800">
+                            Kopi<span class="text-indigo-600">Ngaji</span>
+                        </span>
                     </a>
                 </div>
 

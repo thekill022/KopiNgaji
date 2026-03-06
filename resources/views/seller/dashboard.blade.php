@@ -112,10 +112,10 @@
                     <span>Saldo Penarikan Tersedia</span>
                     <i class="fa-solid fa-wallet text-xl opacity-80"></i>
                 </div>
-                <div class="text-4xl lg:text-5xl font-extrabold mt-4 mb-2 z-10 w-full text-left font-mono">
+                <div class="text-4xl lg:text-5xl text-white font-extrabold mt-4 mb-2 z-10 w-full text-left font-mono">
                     Rp {{ number_format($stats['available_balance'], 0, ',', '.') }}
                 </div>
-                <div class="mt-4 w-full z-10">
+                <div class="mt-4 w-full z-10 text-white">
                     <a href="{{ route('seller.withdrawals.index') }}" class="inline-block bg-white/20 hover:bg-white/30 text-sm font-bold py-2 px-4 rounded-full transition-colors backdrop-blur-sm">
                         <i class="fa-solid fa-money-bill-transfer mr-1"></i> Tarik Dana
                     </a>

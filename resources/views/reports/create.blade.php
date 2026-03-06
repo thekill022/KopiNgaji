@@ -123,5 +123,27 @@
         textarea.addEventListener('input', () => {
             counter.textContent = `${textarea.value.length} / 1000`;
         });
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            document.querySelectorAll('.js-error').forEach(el => el.remove());
+            let valid = true;
+            function addError(el, msg) {
+                const span = document.createElement('p');
+                span.className = 'js-error text-red-500 text-sm mt-1';
+                span.textContent = msg;
+                el.parentElement.appendChild(span);
+            }
+
+            const category = document.getElementById('category');
+            if (!category.value) { addError(category, 'Pilih kategori laporan.'); valid = false; }
+
+            const desc = document.getElementById('description');
+            if (!desc.value.trim()) { addError(desc, 'Deskripsi laporan wajib diisi.'); valid = false; }
+            else if (desc.value.trim().length < 20) { addError(desc, 'Deskripsi minimal 20 karakter.'); valid = false; }
+            else if (desc.value.trim().length > 1000) { addError(desc, 'Deskripsi maksimal 1000 karakter.'); valid = false; }
+
+            if (!valid) e.preventDefault();
+        });
     </script>
 </x-app-layout>

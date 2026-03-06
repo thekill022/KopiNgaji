@@ -23,14 +23,12 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Cart Items List -->
                 <div class="lg:col-span-2 space-y-4">
-                    @php $totalPrice = 0; @endphp
                     @foreach ($cart->items as $item)
-                        @php 
-                            $itemTotal = $item->product->price * $item->quantity;
-                            $totalPrice += $itemTotal; 
-                        @endphp
-                        
-                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-6 relative group transition-all hover:shadow-md">
+                        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-6 relative group transition-all hover:shadow-md cart-item"
+                             data-item-id="{{ $item->id }}"
+                             data-price="{{ $item->product->price }}"
+                             data-stock="{{ $item->product->stock }}"
+                             data-original-qty="{{ $item->quantity }}">
                             
                             <!-- Product Image -->
                             <div class="w-full sm:w-32 h-32 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100 overflow-hidden">
@@ -66,25 +64,21 @@
                                     </form>
                                 </div>
 
-                                <!-- Quantity Controls -->
+                                <!-- Quantity Controls (JS-only, no form submit) -->
                                 <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
-                                    <p class="text-sm font-semibold text-slate-500">Total: <span class="text-slate-800 font-bold">Rp {{ number_format($itemTotal, 0, ',', '.') }}</span></p>
+                                    <p class="text-sm font-semibold text-slate-500">Total: <span class="text-slate-800 font-bold item-total">Rp {{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</span></p>
                                     
-                                    <form action="{{ route('cart.update', $item->id) }}" method="POST" class="flex items-center">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="flex items-center w-28 bg-white border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-100">
-                                            <button type="submit" name="quantity" value="{{ $item->quantity - 1 }}" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 bg-slate-50 transition-colors" @disabled($item->quantity <= 1)>
-                                                <i class="fa-solid fa-minus text-[10px]"></i>
-                                            </button>
-                                            
-                                            <input type="number" readonly value="{{ $item->quantity }}" class="w-12 h-8 text-center border-none text-sm font-bold text-slate-700 p-0 focus:ring-0">
-                                            
-                                            <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 bg-slate-50 transition-colors" @disabled($item->quantity >= $item->product->stock)>
-                                                <i class="fa-solid fa-plus text-[10px]"></i>
-                                            </button>
-                                        </div>
-                                    </form>
+                                    <div class="flex items-center w-28 bg-white border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-100">
+                                        <button type="button" class="qty-btn qty-minus w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 bg-slate-50 transition-colors">
+                                            <i class="fa-solid fa-minus text-[10px]"></i>
+                                        </button>
+                                        
+                                        <input type="number" readonly value="{{ $item->quantity }}" class="qty-input w-12 h-8 text-center border-none text-sm font-bold text-slate-700 p-0 focus:ring-0">
+                                        
+                                        <button type="button" class="qty-btn qty-plus w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 bg-slate-50 transition-colors">
+                                            <i class="fa-solid fa-plus text-[10px]"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -101,24 +95,22 @@
                         
                         <div class="space-y-4 mb-6 text-sm">
                             <div class="flex justify-between items-center text-slate-500">
-                                <span>Total Harga ({{ $cart->items->sum('quantity') }} barang)</span>
-                                <span class="text-slate-700 font-medium">Rp {{ number_format($totalPrice, 0, ',', '.') }}</span>
+                                <span>Total Harga (<span id="total-items">{{ $cart->items->sum('quantity') }}</span> barang)</span>
+                                <span class="text-slate-700 font-medium" id="summary-price">Rp {{ number_format($cart->items->sum(fn($i) => $i->product->price * $i->quantity), 0, ',', '.') }}</span>
                             </div>
-                            <!-- Future tax or discount can go here -->
                         </div>
                         
-                        <div class="border-t border-slate-100 pt-4 mb-8">
+                        <div class="border-t border-slate-100 pt-4 mb-4">
                             <div class="flex justify-between items-center">
                                 <span class="font-bold text-slate-800">Total Belanja</span>
-                                <span class="text-2xl font-black text-indigo-600">Rp {{ number_format($totalPrice, 0, ',', '.') }}</span>
+                                <span class="text-2xl font-black text-indigo-600" id="grand-total">Rp {{ number_format($cart->items->sum(fn($i) => $i->product->price * $i->quantity), 0, ',', '.') }}</span>
                             </div>
                         </div>
-                        
-                        <!-- Note about checkout -->
-                        <a href="{{ route('checkout.index') }}" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-center shadow-lg shadow-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all flex justify-center items-center gap-2">
+
+                        <button type="button" id="checkout-btn" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-center shadow-lg shadow-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all flex justify-center items-center gap-2">
                             Lanjut ke Pembayaran
                             <i class="fa-solid fa-arrow-right"></i>
-                        </a>
+                        </button>
                         
                         <p class="text-center text-xs text-slate-400 mt-4 flex items-center justify-center gap-1 outline-none">
                             <i class="fa-solid fa-lock text-[10px]"></i> Transaksi aman
@@ -146,4 +138,119 @@
             </div>
         @endif
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        let hasChanges = false;
+
+        function formatRupiah(num) {
+            return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+        }
+
+        function recalcSummary() {
+            let grandTotal = 0;
+            let totalItems = 0;
+
+            document.querySelectorAll('.cart-item').forEach(el => {
+                const price = parseFloat(el.dataset.price);
+                const qty = parseInt(el.querySelector('.qty-input').value);
+                const itemTotal = price * qty;
+                grandTotal += itemTotal;
+                totalItems += qty;
+
+                el.querySelector('.item-total').textContent = formatRupiah(itemTotal);
+            });
+
+            document.getElementById('summary-price').textContent = formatRupiah(grandTotal);
+            document.getElementById('grand-total').textContent = formatRupiah(grandTotal);
+            document.getElementById('total-items').textContent = totalItems;
+        }
+
+        function checkChanges() {
+            hasChanges = false;
+            document.querySelectorAll('.cart-item').forEach(el => {
+                const originalQty = parseInt(el.dataset.originalQty);
+                const currentQty = parseInt(el.querySelector('.qty-input').value);
+                if (originalQty !== currentQty) {
+                    hasChanges = true;
+                }
+            });
+        }
+
+        // Quantity buttons
+        document.querySelectorAll('.qty-minus').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const item = this.closest('.cart-item');
+                const input = item.querySelector('.qty-input');
+                let val = parseInt(input.value);
+                if (val > 1) {
+                    input.value = val - 1;
+                    recalcSummary();
+                    checkChanges();
+                }
+            });
+        });
+
+        document.querySelectorAll('.qty-plus').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const item = this.closest('.cart-item');
+                const input = item.querySelector('.qty-input');
+                const stock = parseInt(item.dataset.stock);
+                let val = parseInt(input.value);
+                if (val < stock) {
+                    input.value = val + 1;
+                    recalcSummary();
+                    checkChanges();
+                }
+            });
+        });
+
+        // Checkout button — auto-save quantities then redirect
+        checkoutBtn.addEventListener('click', function () {
+            if (!hasChanges) {
+                window.location.href = '{{ route("checkout.index") }}';
+                return;
+            }
+
+            const items = {};
+            document.querySelectorAll('.cart-item').forEach(el => {
+                items[el.dataset.itemId] = parseInt(el.querySelector('.qty-input').value);
+            });
+
+            checkoutBtn.disabled = true;
+            checkoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+
+            fetch('{{ route("cart.bulk-update") }}', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ items: items })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{{ route("checkout.index") }}';
+                }
+            })
+            .catch(() => {
+                checkoutBtn.disabled = false;
+                checkoutBtn.innerHTML = 'Lanjut ke Pembayaran <i class="fa-solid fa-arrow-right"></i>';
+                showToast('Gagal menyimpan perubahan. Coba lagi.', true);
+            });
+        });
+
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-6 right-6 z-50 px-6 py-3 rounded-xl font-medium shadow-lg flex items-center gap-2 transition-all transform translate-x-0 ${isError ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`;
+            toast.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
+        }
+    });
+    </script>
 </x-app-layout>
