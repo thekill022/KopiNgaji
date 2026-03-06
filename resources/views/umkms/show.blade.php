@@ -82,7 +82,7 @@
             <!-- E-Commerce Product Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
                 @foreach ($products as $product)
-                    <div class="bg-white border text-left border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group flex flex-col h-full relative cursor-pointer hover:-translate-y-1">
+                    <div class="bg-white border text-left border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group flex flex-col h-full relative hover:-translate-y-1">
                         
                         <!-- Badges -->
                         <div class="absolute top-3 left-3 z-10 flex flex-col gap-2">
@@ -92,25 +92,29 @@
                         </div>
 
                         <!-- Product Image Placeholder -->
-                        <div class="aspect-square bg-slate-50 relative p-6 flex flex-col items-center justify-center border-b border-slate-100 overflow-hidden">
-                            <i class="fa-solid fa-image text-5xl text-slate-200 group-hover:scale-110 transition-transform duration-500"></i>
+                        <a href="{{ route('products.show', $product) }}" class="aspect-square bg-slate-50 relative p-6 flex flex-col items-center justify-center border-b border-slate-100 overflow-hidden">
+                            @if($product->image_url)
+                                <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                            @else
+                                <i class="fa-solid fa-image text-5xl text-slate-200 group-hover:scale-110 transition-transform duration-500"></i>
+                            @endif
                             
                             <!-- Hover Action Overlay -->
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                                <button class="bg-white text-indigo-600 font-bold px-4 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg text-sm">
+                                <span class="bg-white text-indigo-600 font-bold px-4 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg text-sm">
                                     Lihat Detail
-                                </button>
+                                </span>
                             </div>
-                        </div>
+                        </a>
                         
                         <!-- Product Info -->
                         <div class="p-4 flex flex-col flex-grow">
                             <!-- Category tags could go here in DB, placeholder for now -->
                             <div class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider">PRODUK UMKM</div>
                             
-                            <h4 class="font-bold text-[15px] leading-tight text-slate-800 group-hover:text-indigo-600 transition-colors mb-2 line-clamp-2">
+                            <a href="{{ route('products.show', $product) }}" class="font-bold text-[15px] leading-tight text-slate-800 hover:text-indigo-600 transition-colors mb-2 line-clamp-2">
                                 {{ $product->name }}
-                            </h4>
+                            </a>
                             
                             <!-- Push price to bottom using mt-auto -->
                             <div class="mt-auto pt-3 flex items-end justify-between">
@@ -118,9 +122,14 @@
                                     <span class="text-sm font-semibold mr-0.5">Rp</span>{{ number_format($product->price, 0, ',', '.') }}
                                 </p>
                                 
-                                <button class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-colors group/btn">
-                                    <i class="fa-solid fa-cart-shopping text-xs"></i>
-                                </button>
+                                <form action="{{ route('cart.store') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" @disabled($product->stock < 1) class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-colors group/btn disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i class="fa-solid fa-cart-shopping text-xs"></i>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

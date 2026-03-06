@@ -28,12 +28,23 @@
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <!-- Cart/Notification Icons (Dummy features for better UX feel) -->
+                <!-- Cart/Notification Icons -->
                 <div class="mr-4 flex items-center space-x-4">
-                     <button class="text-slate-400 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-slate-50 relative">
-                         <i class="fa-regular fa-bell text-lg"></i>
-                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                     </button>
+                     @if(Auth::user()->role === 'BUYER')
+                         @php
+                            $cartItemCount = \App\Models\CartItem::whereHas('cart', function($q) {
+                                $q->where('user_id', Auth::id());
+                            })->sum('quantity');
+                         @endphp
+                         <a href="{{ route('cart.index') }}" class="text-slate-400 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-slate-50 relative group">
+                             <i class="fa-solid fa-cart-shopping text-lg group-hover:scale-110 transition-transform"></i>
+                             @if($cartItemCount > 0)
+                                 <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm border-2 border-white">
+                                     {{ $cartItemCount > 99 ? '99+' : $cartItemCount }}
+                                 </span>
+                             @endif
+                         </a>
+                     @endif
                 </div>
 
                 <x-dropdown align="right" width="48">

@@ -24,6 +24,15 @@ Route::get('/umkms/{umkm}', [\App\Http\Controllers\UmkmController::class, 'show'
     ->middleware(['auth', 'verified', 'role:BUYER'])
     ->name('umkms.show');
 
+// Buyer Cart
+Route::middleware(['auth', 'verified', 'role:BUYER'])->group(function () {
+    Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.store');
+    Route::put('/cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{cartItem}', [\App\Http\Controllers\CartController::class, 'destroy'])->name('cart.destroy');
+    
+    Route::get('/products/{product}', [\App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+});
 // Seller Routes
 Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
