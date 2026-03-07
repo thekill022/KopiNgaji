@@ -10,6 +10,10 @@ class ProductController extends Controller
     {
         $product = \App\Models\Product::with(['umkm', 'images'])->findOrFail($id);
         
+        if (!$product->is_active || $product->status !== 'APPROVED') {
+            abort(404);
+        }
+
         return view('products.show', compact('product'));
     }
 }

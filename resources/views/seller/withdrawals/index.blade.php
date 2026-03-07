@@ -8,18 +8,6 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-            @if(session('success'))
-                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm">
-                    {{ session('error') }}
-                </div>
-            @endif
 
             <!-- Balance Card -->
             <div class="bg-indigo-600 dark:bg-indigo-800 rounded-lg shadow-lg overflow-hidden flex flex-col md:flex-row items-center justify-between p-8 text-white relative">

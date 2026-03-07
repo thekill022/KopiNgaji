@@ -58,6 +58,7 @@ Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('s
     Route::put('/umkm', [UmkmController::class, 'update'])->name('umkm.update');
 
     Route::resource('products', ProductController::class);
+    Route::patch('products/{product}/toggle-active', [ProductController::class, 'toggleActive'])->name('products.toggle-active');
     Route::delete('product-images/{productImage}', [ProductController::class, 'deleteImage'])->name('product-images.destroy');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');

@@ -52,6 +52,31 @@
             </div>
         @endif
 
+        @if(session('warning'))
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6">
+                <div class="bg-amber-50 border-l-4 border-amber-500 text-amber-800 p-4 rounded-lg shadow-sm flex items-center shadow-[0_4px_15px_-5px_#f59e0b50] transition-all transform hover:-translate-y-1">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl mr-3"></i>
+                    <p class="font-medium">{{ session('warning') }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6">
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-lg shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fa-solid fa-circle-exclamation text-red-500 text-xl mr-3"></i>
+                        <p class="font-bold">Terdapat kesalahan pada input Anda:</p>
+                    </div>
+                    <ul class="list-disc list-inside text-sm space-y-1 ml-8">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+
         <!-- Main Content -->
         <main class="flex-grow w-full relative z-10 pb-12 mt-4">
             {{ $slot }}

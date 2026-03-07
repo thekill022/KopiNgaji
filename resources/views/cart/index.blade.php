@@ -12,13 +12,6 @@
             </a>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center gap-3 shadow-sm">
-                <i class="fa-solid fa-circle-check text-xl"></i>
-                <p class="font-medium">{{ session('success') }}</p>
-            </div>
-        @endif
-
         @if ($cart && $cart->items->count() > 0)
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Cart Items List -->

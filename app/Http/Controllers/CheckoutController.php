@@ -66,6 +66,23 @@ class CheckoutController extends Controller
 
         DB::beginTransaction();
         try {
+            // Validate stock and product availability before processing
+            $errors = [];
+            foreach ($cart->items as $item) {
+                if ($item->product->umkm_id != $umkmId) continue;
+
+                if (!$item->product->is_active || $item->product->status !== 'APPROVED') {
+                    $errors[] = '"' . $item->product->name . '" sudah tidak tersedia.';
+                } elseif ($item->product->stock < $item->quantity) {
+                    $errors[] = 'Stok "' . $item->product->name . '" tidak mencukupi (tersedia: ' . $item->product->stock . ').';
+                }
+            }
+
+            if (!empty($errors)) {
+                DB::rollBack();
+                return back()->with('error', implode(' ', $errors));
+            }
+
             $invoiceNumber = 'INV-' . strtoupper(Str::random(10));
             $order = Order::create([
                 'buyer_id' => $user->id,
@@ -106,12 +123,20 @@ class CheckoutController extends Controller
                     'user_email' => $user->email,
                 ];
 
-                $paymentResponse = $dokuService->createPaymentUrl($dokuData);
-                if (isset($paymentResponse['response']['payment']['url'])) {
-                    $order->update([
-                        'doku_invoice_id' => $paymentResponse['response']['order']['invoice_number'] ?? null,
-                        'doku_payment_url' => $paymentResponse['response']['payment']['url']
-                    ]);
+                try {
+                    $paymentResponse = $dokuService->createPaymentUrl($dokuData);
+                    if (isset($paymentResponse['response']['payment']['url'])) {
+                        $order->update([
+                            'doku_invoice_id' => $paymentResponse['response']['order']['invoice_number'] ?? null,
+                            'doku_payment_url' => $paymentResponse['response']['payment']['url']
+                        ]);
+                    } else {
+                        DB::rollBack();
+                        return back()->with('error', 'Gagal menghubungi layanan pembayaran. Silakan coba lagi.');
+                    }
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return back()->with('error', 'Layanan pembayaran sedang gangguan. Silakan coba lagi nanti.');
                 }
             }
 
@@ -124,7 +149,7 @@ class CheckoutController extends Controller
             return redirect()->route('orders.show', $order)->with('success', 'Pesanan berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan saat membuat pesanan: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.');
         }
     }
 }

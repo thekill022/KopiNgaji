@@ -46,17 +46,37 @@
 
                 <!-- Search -->
                 <div class="p-4">
-                    <form method="GET" action="{{ route('seller.orders.index') }}" class="flex gap-3">
+                    <form method="GET" action="{{ route('seller.orders.index') }}" id="order-search-form">
                         @if(request('status'))
                             <input type="hidden" name="status" value="{{ request('status') }}">
                         @endif
-                        <div class="flex-1">
-                            <x-text-input name="search" type="text" class="w-full" placeholder="Cari nama pembeli..."
-                                :value="request('search')" />
+                        <div class="relative">
+                            <x-text-input name="search" id="order-search" type="text" class="w-full pl-10" placeholder="Cari nama pembeli..."
+                                :value="request('search')" autocomplete="off" />
+                            <i class="fa-solid fa-search order-search-icon absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <i class="fa-solid fa-spinner fa-spin order-search-spinner absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500 hidden"></i>
                         </div>
-                        <x-primary-button>Cari</x-primary-button>
                     </form>
                 </div>
+
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    let debounceTimer;
+                    const input = document.getElementById('order-search');
+                    const form = document.getElementById('order-search-form');
+                    const icon = form.querySelector('.order-search-icon');
+                    const spinner = form.querySelector('.order-search-spinner');
+
+                    input.addEventListener('input', function() {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => {
+                            icon.classList.add('hidden');
+                            spinner.classList.remove('hidden');
+                            form.submit();
+                        }, 500);
+                    });
+                });
+                </script>
             </div>
 
             <!-- Orders Table (Desktop) -->
@@ -105,9 +125,21 @@
                                     <br><span class="text-xs">{{ $order->created_at->format('H:i') }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <a href="{{ route('seller.orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
-                                        Detail
-                                    </a>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="{{ route('seller.orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
+                                            Detail
+                                        </a>
+                                        @if($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'))
+                                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Selesaikan pesanan #{{ $order->id }}?')">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="status" value="COMPLETED">
+                                                <button type="submit" class="text-green-600 hover:text-green-800 text-sm font-medium" title="Selesaikan Pesanan">
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -151,7 +183,19 @@
                         </div>
                         <div class="flex items-center justify-between text-sm">
                             <span class="font-medium text-gray-900 dark:text-gray-100">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
-                            <span class="text-xs text-gray-500">{{ $order->created_at->format('d M Y H:i') }}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-gray-500">{{ $order->created_at->format('d M Y H:i') }}</span>
+                                @if($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'))
+                                    <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Selesaikan pesanan #{{ $order->id }}?')">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="COMPLETED">
+                                        <button type="submit" class="text-green-600 hover:text-green-800 text-sm font-bold">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     </a>
                 @empty

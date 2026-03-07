@@ -216,4 +216,25 @@ class ProductController extends Controller
 
         return back()->with('success', 'Gambar berhasil dihapus.');
     }
+
+    public function toggleActive(Product $product)
+    {
+        $umkm = $this->getUmkm();
+
+        if ($product->umkm_id !== $umkm->id) {
+            abort(403);
+        }
+
+        $product->update(['is_active' => !$product->is_active]);
+
+        $message = $product->is_active
+            ? 'Penjualan produk "' . $product->name . '" dibuka.'
+            : 'Penjualan produk "' . $product->name . '" ditutup.';
+
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'is_active' => $product->is_active, 'message' => $message]);
+        }
+
+        return back()->with('success', $message);
+    }
 }

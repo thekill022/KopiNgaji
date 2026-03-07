@@ -4,12 +4,6 @@
             <i class="fa-solid fa-clipboard-list text-indigo-500 mr-2"></i> Daftar Pesanan
         </h1>
 
-        @if(session('success'))
-            <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 font-medium">
-                <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
-            </div>
-        @endif
-
         @if($orders->count() > 0)
             <div class="space-y-6">
                 @foreach($orders as $order)

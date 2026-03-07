@@ -16,12 +16,6 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 md:p-8 border-b border-gray-200 dark:border-gray-700">
 
-                    @if(session('error'))
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 shadow-sm" role="alert">
-                            <span class="block sm:inline">{{ session('error') }}</span>
-                        </div>
-                    @endif
-
                     @php
                         $dokuFee         = (float) env('DOKU_WITHDRAWAL_FEE', 6500);
                         $thresholdActive = $umkm->tax_threshold > 0 && $totalEarnings > $umkm->tax_threshold;

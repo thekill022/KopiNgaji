@@ -119,37 +119,87 @@
             <!-- Action Buttons -->
             @if(in_array($order->status, ['PENDING', 'PAID']))
                 @php
-                    $canComplete = request('scanned') === 'true' && ($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'));
+                    $canComplete = $order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH');
                     $canCancel = $order->payment_method === 'CASH' && $order->status === 'PENDING';
                 @endphp
                 
-                @if($canComplete || $canCancel)
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aksi</h3>
-                        <div class="flex flex-wrap gap-3">
-                            @if($canComplete)
-                                <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Yakin ingin menyelesaikan pesanan ini?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="COMPLETED">
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
-                                        ✓ Selesaikan Pesanan
-                                    </button>
-                                </form>
-                            @endif
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aksi Pesanan</h3>
+                    <div class="flex flex-wrap gap-3">
+                        @if($canComplete)
+                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" id="complete-form">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="COMPLETED">
+                                <button type="button" onclick="document.getElementById('confirm-complete-modal').classList.remove('hidden')"
+                                    class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-wider hover:bg-green-700 transition shadow-sm shadow-green-200">
+                                    <i class="fa-solid fa-circle-check"></i> Selesaikan Pesanan
+                                </button>
+                            </form>
+                        @endif
 
-                            @if($canCancel)
-                                <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Yakin ingin membatalkan pesanan ini?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="CANCELLED">
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                        ✕ Batalkan Pesanan
-                                    </button>
-                                </form>
-                            @endif
+                        @if($canCancel)
+                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" id="cancel-form">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="CANCELLED">
+                                <button type="button" onclick="document.getElementById('confirm-cancel-modal').classList.remove('hidden')"
+                                    class="inline-flex items-center gap-2 px-6 py-3 bg-red-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-wider hover:bg-red-700 transition shadow-sm shadow-red-200">
+                                    <i class="fa-solid fa-circle-xmark"></i> Batalkan Pesanan
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Confirm Complete Modal -->
+                @if($canComplete)
+                <div id="confirm-complete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6">
+                        <div class="text-center">
+                            <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-circle-check text-green-600 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Selesaikan Pesanan?</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Pesanan #{{ $order->id }} akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan.</p>
+                            <div class="flex gap-3 justify-center">
+                                <button onclick="document.getElementById('confirm-complete-modal').classList.add('hidden')"
+                                    class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    Batal
+                                </button>
+                                <button onclick="document.getElementById('complete-form').submit()"
+                                    class="px-5 py-2.5 rounded-lg bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition">
+                                    Ya, Selesaikan
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </div>
+                @endif
+
+                <!-- Confirm Cancel Modal -->
+                @if($canCancel)
+                <div id="confirm-cancel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6">
+                        <div class="text-center">
+                            <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-circle-xmark text-red-600 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Batalkan Pesanan?</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Pesanan #{{ $order->id }} akan dibatalkan. Tindakan ini tidak dapat dibatalkan.</p>
+                            <div class="flex gap-3 justify-center">
+                                <button onclick="document.getElementById('confirm-cancel-modal').classList.add('hidden')"
+                                    class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    Kembali
+                                </button>
+                                <button onclick="document.getElementById('cancel-form').submit()"
+                                    class="px-5 py-2.5 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition">
+                                    Ya, Batalkan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 @endif
             @endif
         </div>
