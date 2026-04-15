@@ -133,6 +133,7 @@ class OrderController extends Controller
                     'amount' => $request->amount,
                     'reason' => $request->reason,
                     'status' => 'APPROVED',
+                    'requested_by' => 'SELLER',
                     'refunded_at' => now(),
                 ]);
 
@@ -153,6 +154,7 @@ class OrderController extends Controller
                     'amount' => $request->amount,
                     'reason' => $request->reason,
                     'status' => 'PENDING',
+                    'requested_by' => 'SELLER',
                 ]);
 
                 DB::commit();

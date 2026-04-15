@@ -102,6 +102,137 @@
                     <span class="text-3xl font-black text-indigo-600">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
                 </div>
             </div>
+
+            {{-- Refund History --}}
+            @if($order->refunds->count() > 0)
+                <div class="border-t border-slate-100 mt-8 pt-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4">
+                        <i class="fa-solid fa-rotate-left text-purple-500 mr-2"></i>Riwayat Refund
+                    </h2>
+                    <div class="space-y-3">
+                        @foreach($order->refunds as $refund)
+                            <div class="bg-white border border-slate-200 rounded-xl p-4">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span class="font-bold text-slate-800">Rp {{ number_format($refund->amount, 0, ',', '.') }}</span>
+                                        @if($refund->requested_by === 'BUYER')
+                                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full ml-2">Diajukan Anda</span>
+                                        @else
+                                            <span class="text-xs bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full ml-2">Dari Penjual</span>
+                                        @endif
+                                    </div>
+                                    <span class="text-xs px-3 py-1 rounded-full font-bold
+                                        {{ $refund->status === 'APPROVED' ? 'bg-green-100 text-green-700' : ($refund->status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700') }}">
+                                        {{ $refund->status === 'APPROVED' ? 'Disetujui' : ($refund->status === 'REJECTED' ? 'Ditolak' : 'Menunggu') }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-slate-600 mt-2">{{ $refund->reason }}</p>
+                                @if($refund->refunded_at)
+                                    <p class="text-xs text-slate-400 mt-1">Diproses {{ $refund->refunded_at->format('d M Y, H:i') }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- Buyer Refund Request Button --}}
+            @if(in_array($order->status, ['PAID', 'COMPLETED']) && !$order->refunds->where('status', 'PENDING')->where('requested_by', 'BUYER')->count())
+                <div class="border-t border-slate-100 mt-8 pt-6">
+                    <div class="bg-purple-50 border border-purple-100 rounded-2xl p-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <h3 class="text-base font-bold text-purple-900">
+                                    <i class="fa-solid fa-rotate-left mr-2"></i>Ajukan Refund
+                                </h3>
+                                <p class="text-sm text-purple-700 mt-1">
+                                    @if($order->payment_method === 'CASH')
+                                        Refund tunai akan diproses oleh penjual secara langsung.
+                                    @else
+                                        Refund non-tunai akan diajukan ke penjual, lalu diproses via DOKU.
+                                    @endif
+                                </p>
+                            </div>
+                            <button type="button"
+                                    onclick="document.getElementById('buyer-refund-modal').classList.remove('hidden')"
+                                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white text-sm font-bold rounded-xl hover:bg-purple-700 transition shadow-sm whitespace-nowrap">
+                                <i class="fa-solid fa-paper-plane"></i> Ajukan Refund
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Refund Modal --}}
+                <div id="buyer-refund-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
+                        <button type="button" onclick="document.getElementById('buyer-refund-modal').classList.add('hidden')"
+                                class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+
+                        <div class="text-center mb-5">
+                            <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fa-solid fa-rotate-left text-purple-600 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-900">Ajukan Refund</h4>
+                            <p class="text-sm text-slate-500 mt-1">
+                                Pesanan <span class="font-mono font-bold">{{ $order->qr_code }}</span>
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-4 mb-5">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-500">Jumlah refund</span>
+                                <span class="text-lg font-bold text-slate-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Refund penuh sesuai total harga pesanan</p>
+                        </div>
+
+                        @if($order->payment_method === 'CASH')
+                            <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5 text-sm text-amber-700">
+                                <i class="fa-solid fa-info-circle mr-1"></i>
+                                <strong>Refund Tunai:</strong> Penjual akan memproses pengembalian uang secara langsung setelah disetujui.
+                            </div>
+                        @else
+                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-5 text-sm text-blue-700">
+                                <i class="fa-solid fa-info-circle mr-1"></i>
+                                <strong>Refund Non-Tunai:</strong> Setelah disetujui penjual, Admin akan memproses refund via DOKU.
+                            </div>
+                        @endif
+
+                        <form method="POST" action="{{ route('orders.refund', $order) }}">
+                            @csrf
+                            <div class="mb-5">
+                                <label for="buyer-refund-reason" class="block text-sm font-semibold text-slate-700 mb-2">
+                                    Alasan Refund <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="reason" id="buyer-refund-reason" rows="3" required
+                                          class="w-full rounded-xl border-slate-300 focus:border-purple-500 focus:ring-purple-500 text-sm"
+                                          placeholder="Jelaskan alasan Anda mengajukan refund..."></textarea>
+                            </div>
+                            <div class="flex gap-3">
+                                <button type="button"
+                                        onclick="document.getElementById('buyer-refund-modal').classList.add('hidden')"
+                                        class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition">
+                                    Batal
+                                </button>
+                                <button type="submit"
+                                        class="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 transition">
+                                    <i class="fa-solid fa-paper-plane mr-1"></i> Kirim Pengajuan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @elseif($order->refunds->where('status', 'PENDING')->where('requested_by', 'BUYER')->count())
+                <div class="border-t border-slate-100 mt-8 pt-6">
+                    <div class="bg-amber-50 border border-amber-100 rounded-2xl p-6 text-center">
+                        <i class="fa-solid fa-clock text-amber-500 text-2xl mb-2"></i>
+                        <h3 class="text-base font-bold text-amber-800">Pengajuan Refund Sedang Diproses</h3>
+                        <p class="text-sm text-amber-700 mt-1">Silakan tunggu konfirmasi dari penjual untuk pengajuan refund Anda.</p>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

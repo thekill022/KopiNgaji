@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\Refund;
 use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
@@ -22,6 +23,49 @@ class OrderController extends Controller
 
         $order->load('refunds');
         return view('orders.show', compact('order'));
+    }
+
+    /**
+     * Buyer requests a refund for their order.
+     */
+    public function requestRefund(Request $request, Order $order)
+    {
+        if ($order->buyer_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to this order.');
+        }
+
+        // Only PAID or COMPLETED orders can be refunded
+        if (!in_array($order->status, ['PAID', 'COMPLETED'])) {
+            return back()->with('error', 'Hanya pesanan dengan status PAID atau COMPLETED yang dapat diajukan refund.');
+        }
+
+        // Check if there's already a pending refund from buyer
+        $existingPending = $order->refunds()
+            ->where('status', 'PENDING')
+            ->where('requested_by', 'BUYER')
+            ->exists();
+
+        if ($existingPending) {
+            return back()->with('error', 'Anda sudah memiliki pengajuan refund yang masih menunggu diproses.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:1000',
+        ], [
+            'reason.required' => 'Alasan refund wajib diisi.',
+            'reason.max' => 'Alasan refund maksimal 1000 karakter.',
+        ]);
+
+        Refund::create([
+            'order_id'     => $order->id,
+            'amount'       => $order->total_price,
+            'reason'       => $request->reason,
+            'status'       => 'PENDING',
+            'requested_by' => 'BUYER',
+        ]);
+
+        return redirect()->route('orders.show', $order)
+            ->with('success', 'Pengajuan refund berhasil dikirim. Silakan tunggu konfirmasi dari penjual.');
     }
 
     // Temporary endpoint to handle Doku Sandbox callback when it redirects back to merchant
@@ -62,3 +106,4 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Kembali dari Doku.');
     }
 }
+

@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified', 'role:BUYER,OWNER'])->group(function () {
     
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/refund', [\App\Http\Controllers\OrderController::class, 'requestRefund'])->name('orders.refund');
     
     Route::get('/products/{product}', [\App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
     Route::get('/reports/create', [\App\Http\Controllers\ReportController::class, 'create'])->name('reports.create');
