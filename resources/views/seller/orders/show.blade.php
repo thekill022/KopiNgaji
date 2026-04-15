@@ -30,6 +30,8 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Paid</span>
                         @elseif($order->status === 'PENDING')
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pending</span>
+                        @elseif($order->status === 'REFUNDED')
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Refunded</span>
                         @else
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Cancelled</span>
                         @endif
@@ -116,6 +118,32 @@
                 </div>
             </div>
 
+            <!-- Refund History -->
+            @if($order->refunds->count() > 0)
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Riwayat Refund</h3>
+                    <div class="space-y-4">
+                        @foreach($order->refunds as $refund)
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">Rp {{ number_format($refund->amount, 0, ',', '.') }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $refund->reason }}</p>
+                                    </div>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium
+                                        {{ $refund->status === 'APPROVED' ? 'bg-green-100 text-green-800' : ($refund->status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                        {{ $refund->status }}
+                                    </span>
+                                </div>
+                                @if($refund->refunded_at)
+                                    <p class="text-xs text-gray-400 mt-2">Diproses pada {{ $refund->refunded_at->format('d M Y, H:i') }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             <!-- Action Buttons -->
             @if(in_array($order->status, ['PENDING', 'PAID']))
                 @php
@@ -148,6 +176,13 @@
                                     <i class="fa-solid fa-circle-xmark"></i> Batalkan Pesanan
                                 </button>
                             </form>
+                        @endif
+
+                        @if(in_array($order->status, ['PAID', 'COMPLETED']))
+                            <button type="button" onclick="document.getElementById('refund-modal').classList.remove('hidden')"
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-wider hover:bg-purple-700 transition shadow-sm shadow-purple-200">
+                                <i class="fa-solid fa-rotate-left"></i> Proses Refund
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -198,6 +233,51 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Refund Modal -->
+                @if(in_array($order->status, ['PAID', 'COMPLETED']))
+                <div id="refund-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+                        <div class="text-center mb-4">
+                            <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fa-solid fa-rotate-left text-purple-600 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100">Proses Refund</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                @if($order->payment_method === 'CASH')
+                                    Refund tunai akan langsung diproses dan stok dikembalikan.
+                                @else
+                                    Refund non-tunai akan diajukan ke Admin untuk diproses manual via DOKU.
+                                @endif
+                            </p>
+                        </div>
+                        <form method="POST" action="{{ route('seller.orders.refund', $order) }}" id="refund-form">
+                            @csrf
+                            <div class="mb-4 text-left">
+                                <label for="refund-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah Refund (Rp)</label>
+                                <input type="number" name="amount" id="refund-amount" step="0.01" min="1" max="{{ $order->net_amount }}" required
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-purple-500 focus:ring-purple-500">
+                                <p class="text-xs text-gray-400 mt-1">Maksimal Rp {{ number_format($order->net_amount, 0, ',', '.') }}</p>
+                            </div>
+                            <div class="mb-6 text-left">
+                                <label for="refund-reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan Refund</label>
+                                <textarea name="reason" id="refund-reason" rows="3" required
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-purple-500 focus:ring-purple-500"></textarea>
+                            </div>
+                            <div class="flex gap-3 justify-center">
+                                <button type="button" onclick="document.getElementById('refund-modal').classList.add('hidden')"
+                                    class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    Batal
+                                </button>
+                                <button type="submit"
+                                    class="px-5 py-2.5 rounded-lg bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 transition">
+                                    Ajukan Refund
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 @endif

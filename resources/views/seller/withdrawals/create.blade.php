@@ -18,10 +18,14 @@
 
                     @php
                         $dokuFee         = (float) env('DOKU_WITHDRAWAL_FEE', 6500);
-                        $thresholdActive = $umkm->tax_threshold > 0 && $totalEarnings > $umkm->tax_threshold;
-                        $feeLabel        = $umkm->platform_fee_type === 'percentage'
+                        $thresholdBarangActive = $umkm->tax_threshold > 0 && $totalEarningsBarang > $umkm->tax_threshold;
+                        $thresholdJasaActive   = $umkm->tax_threshold_jasa > 0 && $totalEarningsJasa > $umkm->tax_threshold_jasa;
+                        $feeBarangLabel = $umkm->platform_fee_type === 'percentage'
                             ? $umkm->platform_fee_rate . '%'
                             : 'Rp ' . number_format($umkm->platform_fee_flat, 0, ',', '.');
+                        $feeJasaLabel = $umkm->platform_fee_type_jasa === 'percentage'
+                            ? $umkm->platform_fee_rate_jasa . '%'
+                            : 'Rp ' . number_format($umkm->platform_fee_flat_jasa, 0, ',', '.');
                     @endphp
 
                     <!-- Saldo Tersedia -->
@@ -33,14 +37,17 @@
                                 <p class="text-2xl font-bold font-mono text-gray-900 dark:text-gray-100">Rp {{ number_format($availableBalance, 0, ',', '.') }}</p>
                             </div>
                         </div>
-                        @if($umkm->tax_threshold > 0)
-                            <div class="text-right text-xs max-w-[200px] {{ $thresholdActive ? 'text-orange-500 font-semibold' : 'text-indigo-500' }}">
-                                @if($thresholdActive)
-                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                                    Komisi platform aktif — kumulatif Anda melebihi batas Rp {{ number_format($umkm->tax_threshold, 0, ',', '.') }}
+                        @if($umkm->tax_threshold > 0 || $umkm->tax_threshold_jasa > 0)
+                            <div class="text-right text-xs max-w-[260px]">
+                                @if($thresholdBarangActive)
+                                    <p class="text-orange-500 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Komisi Barang aktif (>&nbsp;Rp&nbsp;{{ number_format($umkm->tax_threshold, 0, ',', '.') }})</p>
                                 @else
-                                    <i class="fa-solid fa-circle-info mr-1"></i>
-                                    Komisi platform belum berlaku (kumulatif: Rp {{ number_format($totalEarnings, 0, ',', '.') }} dari batas Rp {{ number_format($umkm->tax_threshold, 0, ',', '.') }})
+                                    <p class="text-indigo-500"><i class="fa-solid fa-circle-info mr-1"></i> Komisi Barang belum aktif</p>
+                                @endif
+                                @if($thresholdJasaActive)
+                                    <p class="text-orange-500 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Komisi Jasa aktif (>&nbsp;Rp&nbsp;{{ number_format($umkm->tax_threshold_jasa, 0, ',', '.') }})</p>
+                                @else
+                                    <p class="text-indigo-500"><i class="fa-solid fa-circle-info mr-1"></i> Komisi Jasa belum aktif</p>
                                 @endif
                             </div>
                         @endif
@@ -76,20 +83,39 @@
                                     <span class="font-semibold text-slate-800 dark:text-slate-200" id="preview-gross">Rp 0</span>
                                 </div>
 
-                                <!-- Komisi Platform (hanya muncul jika threshold terlampaui) -->
-                                @if($thresholdActive)
+                                <!-- Komisi Platform Barang -->
+                                @if($thresholdBarangActive)
                                     <div class="flex justify-between px-4 py-3">
-                                        <span class="text-orange-500 flex items-center gap-1">
+                                        <span class="text-orange-500 flex items-center gap-1 text-sm">
                                             <i class="fa-solid fa-percent text-xs"></i>
-                                            Komisi Platform ({{ $feeLabel }})
+                                            Komisi Barang ({{ $feeBarangLabel }})
                                         </span>
-                                        <span class="font-semibold text-orange-500" id="preview-platform-fee">- Rp 0</span>
+                                        <span class="font-semibold text-orange-500" id="preview-platform-fee-barang">- Rp 0</span>
                                     </div>
                                 @else
                                     <div class="flex justify-between px-4 py-3 opacity-40">
                                         <span class="text-slate-400 flex items-center gap-1 text-xs italic">
                                             <i class="fa-solid fa-lock text-xs"></i>
-                                            Komisi Platform ({{ $feeLabel }}) — belum aktif
+                                            Komisi Barang ({{ $feeBarangLabel }}) — belum aktif
+                                        </span>
+                                        <span class="text-slate-400 text-xs">Rp 0</span>
+                                    </div>
+                                @endif
+
+                                <!-- Komisi Platform Jasa -->
+                                @if($thresholdJasaActive)
+                                    <div class="flex justify-between px-4 py-3">
+                                        <span class="text-orange-500 flex items-center gap-1 text-sm">
+                                            <i class="fa-solid fa-percent text-xs"></i>
+                                            Komisi Jasa ({{ $feeJasaLabel }})
+                                        </span>
+                                        <span class="font-semibold text-orange-500" id="preview-platform-fee-jasa">- Rp 0</span>
+                                    </div>
+                                @else
+                                    <div class="flex justify-between px-4 py-3 opacity-40">
+                                        <span class="text-slate-400 flex items-center gap-1 text-xs italic">
+                                            <i class="fa-solid fa-lock text-xs"></i>
+                                            Komisi Jasa ({{ $feeJasaLabel }}) — belum aktif
                                         </span>
                                         <span class="text-slate-400 text-xs">Rp 0</span>
                                     </div>
@@ -187,14 +213,16 @@
                         <strong>Biaya transfer DOKU</strong> sebesar <strong>Rp {{ number_format($dokuFee, 0, ',', '.') }}</strong>
                         ditanggung UMKM dan dipotong dari dana yang dikirim ke rekening.
                     </li>
-                    @if($umkm->tax_threshold > 0)
+                    @if($umkm->tax_threshold > 0 || $umkm->tax_threshold_jasa > 0)
                         <li>
-                            <strong>Komisi platform ({{ $feeLabel }})</strong> berlaku setelah total keuntungan kumulatif Anda
-                            melebihi <strong>Rp {{ number_format($umkm->tax_threshold, 0, ',', '.') }}</strong>.
-                            @if($thresholdActive)
-                                <span class="text-orange-500 font-semibold">Saat ini komisi platform <u>sudah aktif</u>.</span>
-                            @else
-                                Kumulatif saat ini: <strong>Rp {{ number_format($totalEarnings, 0, ',', '.') }}</strong> (belum melampaui batas).
+                            <strong>Komisi platform</strong> dipisahkan per tipe produk:
+                            @if($umkm->tax_threshold > 0)
+                                Barang <strong>{{ $feeBarangLabel }}</strong> setelah Rp {{ number_format($umkm->tax_threshold, 0, ',', '.') }}
+                                (kumulatif Barang: Rp {{ number_format($totalEarningsBarang, 0, ',', '.') }}).
+                            @endif
+                            @if($umkm->tax_threshold_jasa > 0)
+                                Jasa <strong>{{ $feeJasaLabel }}</strong> setelah Rp {{ number_format($umkm->tax_threshold_jasa, 0, ',', '.') }}
+                                (kumulatif Jasa: Rp {{ number_format($totalEarningsJasa, 0, ',', '.') }}).
                             @endif
                         </li>
                     @else
@@ -210,10 +238,17 @@
     <script>
         const amountInput    = document.getElementById('amount');
         const dokuFee        = {{ (float) env('DOKU_WITHDRAWAL_FEE', 6500) }};
-        const thresholdActive = {{ $thresholdActive ? 'true' : 'false' }};
-        const feeType        = '{{ $umkm->platform_fee_type }}';
-        const feeRate        = {{ (float) $umkm->platform_fee_rate }};
-        const feeFlat        = {{ (float) $umkm->platform_fee_flat }};
+        const totalEarnings  = {{ (float) $totalEarnings }};
+        const totalEarningsBarang = {{ (float) $totalEarningsBarang }};
+        const totalEarningsJasa   = {{ (float) $totalEarningsJasa }};
+        const thresholdBarangActive = {{ $thresholdBarangActive ? 'true' : 'false' }};
+        const thresholdJasaActive   = {{ $thresholdJasaActive ? 'true' : 'false' }};
+        const feeBarangType  = '{{ $umkm->platform_fee_type }}';
+        const feeBarangRate  = {{ (float) $umkm->platform_fee_rate }};
+        const feeBarangFlat  = {{ (float) $umkm->platform_fee_flat }};
+        const feeJasaType    = '{{ $umkm->platform_fee_type_jasa }}';
+        const feeJasaRate    = {{ (float) $umkm->platform_fee_rate_jasa }};
+        const feeJasaFlat    = {{ (float) $umkm->platform_fee_flat_jasa }};
 
         function fmt(n) {
             return 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -221,19 +256,34 @@
 
         function updateBreakdown() {
             const gross = parseFloat(amountInput.value) || 0;
-            let platformFee = 0;
+            let platformFeeBarang = 0;
+            let platformFeeJasa = 0;
 
-            if (thresholdActive) {
-                platformFee = feeType === 'percentage'
-                    ? Math.round(gross * feeRate / 100)
-                    : feeFlat;
+            if (totalEarnings > 0) {
+                const barangPortion = gross * (totalEarningsBarang / totalEarnings);
+                const jasaPortion   = gross * (totalEarningsJasa / totalEarnings);
+
+                if (thresholdBarangActive) {
+                    platformFeeBarang = feeBarangType === 'percentage'
+                        ? Math.round(barangPortion * feeBarangRate / 100)
+                        : feeBarangFlat;
+                }
+                if (thresholdJasaActive) {
+                    platformFeeJasa = feeJasaType === 'percentage'
+                        ? Math.round(jasaPortion * feeJasaRate / 100)
+                        : feeJasaFlat;
+                }
             }
 
+            const platformFee = platformFeeBarang + platformFeeJasa;
             const net = Math.max(0, gross - platformFee - dokuFee);
 
             document.getElementById('preview-gross').textContent = fmt(gross);
-            if (thresholdActive) {
-                document.getElementById('preview-platform-fee').textContent = '- ' + fmt(platformFee);
+            if (thresholdBarangActive) {
+                document.getElementById('preview-platform-fee-barang').textContent = '- ' + fmt(platformFeeBarang);
+            }
+            if (thresholdJasaActive) {
+                document.getElementById('preview-platform-fee-jasa').textContent = '- ' + fmt(platformFeeJasa);
             }
             document.getElementById('preview-net').textContent = fmt(net);
         }

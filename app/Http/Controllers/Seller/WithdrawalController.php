@@ -7,27 +7,53 @@ use App\Models\Withdrawal;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class WithdrawalController extends Controller
 {
-    /** Hitung total keuntungan DOKU dan saldo tersedia */
+    /** Hitung total keuntungan DOKU dan saldo tersedia dengan breakdown Barang/Jasa */
     private function earningsData(): array
     {
         $user = Auth::user();
-        if (!$user->umkm) return ['total_earnings' => 0, 'available_balance' => 0];
+        if (!$user->umkm) {
+            return [
+                'total_earnings'        => 0,
+                'total_earnings_barang' => 0,
+                'total_earnings_jasa'   => 0,
+                'available_balance'     => 0,
+            ];
+        }
 
         $totalEarnings = Order::where('umkm_id', $user->umkm->id)
             ->where('status', 'COMPLETED')
             ->where('payment_method', 'NON_CASH')
             ->sum('net_amount');
 
+        $barangEarnings = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.umkm_id', $user->umkm->id)
+            ->where('orders.status', 'COMPLETED')
+            ->where('orders.payment_method', 'NON_CASH')
+            ->where('order_items.product_type', 'BARANG')
+            ->sum(DB::raw('order_items.quantity * order_items.price'));
+
+        $jasaEarnings = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.umkm_id', $user->umkm->id)
+            ->where('orders.status', 'COMPLETED')
+            ->where('orders.payment_method', 'NON_CASH')
+            ->where('order_items.product_type', 'JASA')
+            ->sum(DB::raw('order_items.quantity * order_items.price'));
+
         $totalWithdrawn = Withdrawal::where('owner_id', $user->id)
             ->whereIn('status', ['PENDING', 'APPROVED'])
-            ->sum('gross_amount'); // pakai gross_amount agar saldo tidak bergeser oleh potongan
+            ->sum('gross_amount');
 
         return [
-            'total_earnings'   => (float) $totalEarnings,
-            'available_balance' => max(0, (float) $totalEarnings - (float) $totalWithdrawn),
+            'total_earnings'        => (float) $totalEarnings,
+            'total_earnings_barang' => (float) $barangEarnings,
+            'total_earnings_jasa'   => (float) $jasaEarnings,
+            'available_balance'     => max(0, (float) $totalEarnings - (float) $totalWithdrawn),
         ];
     }
 
@@ -57,9 +83,11 @@ class WithdrawalController extends Controller
         $data             = $this->earningsData();
         $availableBalance = $data['available_balance'];
         $totalEarnings    = $data['total_earnings'];
+        $totalEarningsBarang = $data['total_earnings_barang'];
+        $totalEarningsJasa   = $data['total_earnings_jasa'];
         $umkm             = $user->umkm;
 
-        return view('seller.withdrawals.create', compact('availableBalance', 'totalEarnings', 'umkm'));
+        return view('seller.withdrawals.create', compact('availableBalance', 'totalEarnings', 'totalEarningsBarang', 'totalEarningsJasa', 'umkm'));
     }
 
     public function store(Request $request)
@@ -76,6 +104,8 @@ class WithdrawalController extends Controller
         $data             = $this->earningsData();
         $availableBalance = $data['available_balance'];
         $totalEarnings    = $data['total_earnings'];
+        $totalEarningsBarang = $data['total_earnings_barang'];
+        $totalEarningsJasa   = $data['total_earnings_jasa'];
 
         $request->validate([
             'amount'       => ['required', 'numeric', 'min:50000', 'max:' . max(50000, $availableBalance)],
@@ -97,7 +127,7 @@ class WithdrawalController extends Controller
         // Hitung deductions
         $umkm       = $user->umkm;
         $gross      = (float) $request->amount;
-        $deductions = $umkm->calculateWithdrawalDeductions($gross, $totalEarnings);
+        $deductions = $umkm->calculateWithdrawalDeductions($gross, $totalEarningsBarang, $totalEarningsJasa);
 
         Withdrawal::create([
             'owner_id'               => $user->id,

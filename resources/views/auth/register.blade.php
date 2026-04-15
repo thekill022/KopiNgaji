@@ -34,21 +34,36 @@
         </div>
 
         <!-- Password -->
-        <div>
-            <x-input-label for="password" :value="__('Password')" class="text-gray-700 dark:text-gray-300 font-semibold"  />
-            <x-text-input id="password" class="block mt-2 w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" placeholder="••••••••" />
+        <div x-data="{ show: false }">
+            <x-input-label for="password" :value="__('Password')" class="text-gray-700 dark:text-gray-300 font-semibold" />
+            <div class="relative mt-2">
+                <input id="password" :type="show ? 'text' : 'password'" name="password"
+                       class="block w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300"
+                       required autocomplete="new-password" placeholder="••••••••" />
+                <button type="button" @click="show = !show"
+                        class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-indigo-600 transition-colors"
+                        :title="show ? 'Sembunyikan password' : 'Lihat password'">
+                    <i class="fa-solid fa-eye text-base" x-show="!show"></i>
+                    <i class="fa-solid fa-eye-slash text-base" x-show="show" x-cloak></i>
+                </button>
+            </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
         <!-- Confirm Password -->
-        <div>
+        <div x-data="{ show: false }">
             <x-input-label for="password_confirmation" :value="__('Confirm Password')" class="text-gray-700 dark:text-gray-300 font-semibold" />
-            <x-text-input id="password_confirmation" class="block mt-2 w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" placeholder="••••••••" />
+            <div class="relative mt-2">
+                <input id="password_confirmation" :type="show ? 'text' : 'password'" name="password_confirmation"
+                       class="block w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300"
+                       required autocomplete="new-password" placeholder="••••••••" />
+                <button type="button" @click="show = !show"
+                        class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-indigo-600 transition-colors"
+                        :title="show ? 'Sembunyikan password' : 'Lihat password'">
+                    <i class="fa-solid fa-eye text-base" x-show="!show"></i>
+                    <i class="fa-solid fa-eye-slash text-base" x-show="show" x-cloak></i>
+                </button>
+            </div>
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 

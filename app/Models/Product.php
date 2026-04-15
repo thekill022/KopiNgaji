@@ -19,6 +19,11 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    public static array $types = [
+        'BARANG' => 'Barang',
+        'JASA' => 'Jasa',
+    ];
+
     public function umkm()
     {
         return $this->belongsTo(Umkm::class);

@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $this->role === 'ADMIN';
     }
 
+    public function canBuy(): bool
+    {
+        return in_array($this->role, ['BUYER', 'OWNER']);
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

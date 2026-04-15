@@ -12,6 +12,14 @@ class Order extends Model
 
     protected $guarded = ['id'];
 
+    public static array $statuses = [
+        'PENDING'   => 'Pending',
+        'PAID'      => 'Paid',
+        'CANCELLED' => 'Cancelled',
+        'COMPLETED' => 'Completed',
+        'REFUNDED'  => 'Refunded',
+    ];
+
     protected $casts = [
         'total_price' => 'decimal:2',
         'subtotal_amount' => 'decimal:2',
@@ -38,5 +46,15 @@ class Order extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    public function shippingZone()
+    {
+        return $this->belongsTo(ShippingZone::class);
+    }
+
+    public function refunds()
+    {
+        return $this->hasMany(Refund::class);
     }
 }

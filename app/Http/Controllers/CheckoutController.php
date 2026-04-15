@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ShippingZone;
 use App\Services\DokuService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,9 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('checkout.index', compact('cart', 'totalPrice', 'umkmId'));
+        $shippingZones = ShippingZone::where('umkm_id', $umkmId)->with('areas')->get();
+
+        return view('checkout.index', compact('cart', 'totalPrice', 'umkmId', 'shippingZones'));
     }
 
     public function store(Request $request, DokuService $dokuService)
@@ -44,6 +47,7 @@ class CheckoutController extends Controller
             'payment_method' => 'required|in:CASH,NON_CASH',
             'delivery_method' => 'required|in:AMBIL_LOKASI,KIRIM_ALAMAT',
             'shipping_address' => 'required_if:delivery_method,KIRIM_ALAMAT|nullable|string',
+            'shipping_zone_id' => 'required_if:delivery_method,KIRIM_ALAMAT|nullable|exists:shipping_zones,id',
             'whatsapp' => 'required|string|max:20',
         ]);
 
@@ -83,19 +87,31 @@ class CheckoutController extends Controller
                 return back()->with('error', implode(' ', $errors));
             }
 
+            $shippingZone = null;
+            $shippingCost = 0;
+            if ($request->delivery_method === 'KIRIM_ALAMAT' && $request->shipping_zone_id) {
+                $shippingZone = ShippingZone::where('id', $request->shipping_zone_id)->where('umkm_id', $umkmId)->first();
+                if (!$shippingZone) {
+                    DB::rollBack();
+                    return back()->with('error', 'Zona pengiriman tidak valid.');
+                }
+                $shippingCost = $shippingZone->cost;
+            }
+
             $invoiceNumber = 'INV-' . strtoupper(Str::random(10));
             $order = Order::create([
                 'buyer_id' => $user->id,
                 'umkm_id' => $umkmId,
+                'shipping_zone_id' => $shippingZone?->id,
                 'status' => 'PENDING',
                 'payment_method' => $request->payment_method,
                 'delivery_method' => $request->delivery_method,
                 'shipping_address' => $request->shipping_address,
-                'total_price' => $subtotal,
+                'total_price' => $subtotal + $shippingCost,
                 'subtotal_amount' => $subtotal,
-                'net_amount' => $subtotal,
+                'net_amount' => $subtotal + $shippingCost,
                 'whatsapp' => $request->whatsapp,
-                'qr_code' => $invoiceNumber, // Used for QR string
+                'qr_code' => $invoiceNumber,
             ]);
 
             foreach ($cart->items as $item) {
@@ -105,6 +121,7 @@ class CheckoutController extends Controller
                         'product_id' => $item->product_id,
                         'quantity' => $item->quantity,
                         'price' => $item->product->price,
+                        'product_type' => $item->product->type,
                     ]);
 
                     // Reduce stock
@@ -117,7 +134,7 @@ class CheckoutController extends Controller
             if ($request->payment_method === 'NON_CASH') {
                 $dokuData = [
                     'invoice_number' => $invoiceNumber,
-                    'amount' => $subtotal,
+                    'amount' => $subtotal + $shippingCost,
                     'user_id' => $user->id,
                     'user_name' => $user->name,
                     'user_email' => $user->email,

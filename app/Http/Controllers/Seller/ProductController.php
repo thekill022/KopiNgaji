@@ -62,6 +62,7 @@ class ProductController extends Controller
             'discount' => 'nullable|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'is_preorder' => 'boolean',
+            'type' => 'required|in:BARANG,JASA',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
@@ -74,6 +75,7 @@ class ProductController extends Controller
             'discount' => $request->discount ?? 0,
             'stock' => $request->stock,
             'is_preorder' => $request->boolean('is_preorder'),
+            'type' => $request->type,
             'status' => 'PENDING',
         ]);
 
@@ -126,6 +128,7 @@ class ProductController extends Controller
             'discount' => 'nullable|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'is_preorder' => 'boolean',
+            'type' => 'required|in:BARANG,JASA',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
@@ -138,6 +141,7 @@ class ProductController extends Controller
             'discount' => $request->discount ?? 0,
             'stock' => $request->stock,
             'is_preorder' => $request->boolean('is_preorder'),
+            'type' => $request->type,
         ]);
 
         // Handle new image uploads

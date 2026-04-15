@@ -29,6 +29,26 @@
                         </span>
                     </div>
 
+                    @if($order->refunds->count() > 0)
+                        <div class="mt-4">
+                            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Refund</h2>
+                            @foreach($order->refunds as $refund)
+                                <div class="bg-white border border-slate-200 rounded-xl p-3 mb-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-slate-800">Rp {{ number_format($refund->amount, 0, ',', '.') }}</span>
+                                        <span class="text-xs px-2 py-1 rounded-full {{ $refund->status === 'APPROVED' ? 'bg-green-100 text-green-700' : ($refund->status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700') }}">
+                                            {{ $refund->status }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-slate-600 mt-1">{{ $refund->reason }}</p>
+                                    @if($refund->refunded_at)
+                                        <p class="text-xs text-slate-400 mt-1">Diproses {{ $refund->refunded_at->format('d M Y, H:i') }}</p>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div>
                         <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Tanggal Pesanan</h2>
                         <p class="text-slate-800 font-bold text-lg">{{ $order->created_at->format('d M Y, H:i') }}</p>

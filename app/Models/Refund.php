@@ -5,15 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OrderItem extends Model
+class Refund extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderItemFactory> */
     use HasFactory;
 
     protected $guarded = ['id'];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'amount' => 'decimal:2',
+        'refunded_at' => 'datetime',
     ];
 
     public function order()
@@ -21,8 +21,8 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function product()
+    public function scopeApproved($query)
     {
-        return $this->belongsTo(Product::class);
+        return $query->where('status', 'APPROVED');
     }
 }

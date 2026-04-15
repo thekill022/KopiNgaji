@@ -47,6 +47,12 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="whatsapp" :value="__('Nomor WhatsApp')" />
+            <x-text-input id="whatsapp" name="whatsapp" type="text" class="mt-1 block w-full" :value="old('whatsapp', $user->whatsapp)" placeholder="Contoh: 081234567890" autocomplete="tel" />
+            <x-input-error class="mt-2" :messages="$errors->get('whatsapp')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

@@ -24,7 +24,7 @@ class ProductFactory extends Factory
             'cost_price' => fake()->randomFloat(2, 5000, 400000),
             'discount' => fake()->randomFloat(2, 0, 50000),
             'stock' => fake()->numberBetween(0, 100),
-            'image_url' => fake()->imageUrl(),
+            'image_url' => 'products/placeholder_' . fake()->numberBetween(1, 8) . '.svg',
             'is_preorder' => fake()->boolean(),
             'status' => fake()->randomElement(['PENDING', 'APPROVED', 'REJECTED']),
         ];

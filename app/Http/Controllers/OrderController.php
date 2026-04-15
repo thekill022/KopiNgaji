@@ -10,7 +10,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::where('buyer_id', Auth::id())->with('umkm')->latest()->get();
+        $orders = Order::where('buyer_id', Auth::id())->with(['umkm', 'refunds'])->latest()->get();
         return view('orders.index', compact('orders'));
     }
 
@@ -20,6 +20,7 @@ class OrderController extends Controller
             abort(403, 'Unauthorized access to this order.');
         }
 
+        $order->load('refunds');
         return view('orders.show', compact('order'));
     }
 

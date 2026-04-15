@@ -18,7 +18,7 @@ class ProductImageFactory extends Factory
     {
         return [
             'product_id' => \App\Models\Product::factory(),
-            'image_url' => fake()->imageUrl(640, 480, 'food'),
+            'image_url' => 'products/placeholder_' . fake()->numberBetween(1, 8) . '.svg',
             'sort_order' => fake()->numberBetween(0, 5),
         ];
     }

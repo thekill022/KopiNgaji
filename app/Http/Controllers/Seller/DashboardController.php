@@ -37,7 +37,7 @@ class DashboardController extends Controller
                 ->whereIn('status', ['PENDING', 'APPROVED'])
                 ->sum('amount');
 
-            $availableBalance = $nonCashRevenue - $totalWithdrawn;
+            $availableBalance = max(0, $nonCashRevenue - $totalWithdrawn);
         }
 
         $stats = [

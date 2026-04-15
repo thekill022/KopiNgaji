@@ -29,16 +29,31 @@
                                 <div class="rounded-xl border-2 border-slate-200 p-4 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 transition-all text-center">
                                     <i class="fa-solid fa-motorcycle text-2xl text-slate-400 peer-checked:text-indigo-600 mb-2"></i>
                                     <div class="font-bold text-slate-800">Kirim ke Alamat</div>
-                                    <div class="text-xs text-slate-500 mt-1">Pesanan akan diantarkan ke alamat tujuan (Ongkir belum termasuk).</div>
+                                    <div class="text-xs text-slate-500 mt-1">Pesanan akan diantarkan ke alamat tujuan.</div>
                                 </div>
                             </label>
                         </div>
                         
-                        <!-- Address Field (hidden by default) -->
-                        <div id="address-container" class="mt-6 hidden">
-                            <label for="shipping_address" class="block text-sm font-medium text-slate-700 mb-2">Alamat Lengkap Pengiriman</label>
-                            <textarea name="shipping_address" id="shipping_address" rows="3" class="w-full rounded-xl border-slate-200 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ketikkan alamat lengkap pengiriman Anda..."></textarea>
-                            @error('shipping_address') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        <!-- Address & Shipping Zone Field (hidden by default) -->
+                        <div id="address-container" class="mt-6 hidden space-y-4">
+                            <div>
+                                <label for="shipping_zone_id" class="block text-sm font-medium text-slate-700 mb-2">Zona Pengiriman</label>
+                                <select name="shipping_zone_id" id="shipping_zone_id" class="w-full rounded-xl border-slate-200 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" onchange="updateTotal()">
+                                    <option value="">Pilih zona pengiriman</option>
+                                    @foreach ($shippingZones as $zone)
+                                        <option value="{{ $zone->id }}" data-cost="{{ $zone->cost }}">
+                                            {{ $zone->name }} — Rp {{ number_format($zone->cost, 0, ',', '.') }}
+                                            ({{ $zone->areas->pluck('area_name')->implode(', ') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('shipping_zone_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label for="shipping_address" class="block text-sm font-medium text-slate-700 mb-2">Alamat Lengkap Pengiriman</label>
+                                <textarea name="shipping_address" id="shipping_address" rows="3" class="w-full rounded-xl border-slate-200 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ketikkan alamat lengkap pengiriman Anda..."></textarea>
+                                @error('shipping_address') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
                         </div>
                     </div>
 
@@ -98,10 +113,18 @@
                             @endforeach
                         </div>
                         
-                        <div class="border-t border-slate-200 pt-4 mb-8">
+                        <div class="border-t border-slate-200 pt-4 mb-2">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-slate-600">Subtotal</span>
+                                <span class="font-medium text-slate-800">Rp {{ number_format($totalPrice, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-4" id="shipping-cost-row" style="display: none;">
+                                <span class="text-slate-600">Ongkir</span>
+                                <span class="font-medium text-slate-800" id="shipping-cost-display">Rp 0</span>
+                            </div>
                             <div class="flex justify-between items-center">
                                 <span class="font-bold text-slate-800">Total Harga</span>
-                                <span class="text-2xl font-black text-indigo-600">Rp {{ number_format($totalPrice, 0, ',', '.') }}</span>
+                                <span class="text-2xl font-black text-indigo-600" id="grand-total">Rp {{ number_format($totalPrice, 0, ',', '.') }}</span>
                             </div>
                         </div>
                         
@@ -115,17 +138,50 @@
     </div>
 
     <script>
+        const baseTotal = {{ $totalPrice }};
+
         function toggleAddress(show) {
             const container = document.getElementById('address-container');
             const textarea = document.getElementById('shipping_address');
+            const zoneSelect = document.getElementById('shipping_zone_id');
             if (show) {
                 container.classList.remove('hidden');
                 textarea.setAttribute('required', 'required');
+                zoneSelect.setAttribute('required', 'required');
             } else {
                 container.classList.add('hidden');
                 textarea.removeAttribute('required');
                 textarea.value = '';
+                zoneSelect.removeAttribute('required');
+                zoneSelect.value = '';
+                updateTotal();
             }
+        }
+
+        function formatRupiah(num) {
+            return 'Rp ' + num.toLocaleString('id-ID');
+        }
+
+        function updateTotal() {
+            const zoneSelect = document.getElementById('shipping_zone_id');
+            const costRow = document.getElementById('shipping-cost-row');
+            const costDisplay = document.getElementById('shipping-cost-display');
+            const grandTotal = document.getElementById('grand-total');
+
+            let shippingCost = 0;
+            if (zoneSelect.value) {
+                const option = zoneSelect.options[zoneSelect.selectedIndex];
+                shippingCost = parseInt(option.getAttribute('data-cost')) || 0;
+            }
+
+            if (shippingCost > 0) {
+                costRow.style.display = 'flex';
+                costDisplay.textContent = formatRupiah(shippingCost);
+            } else {
+                costRow.style.display = 'none';
+            }
+
+            grandTotal.textContent = formatRupiah(baseTotal + shippingCost);
         }
 
         // Form validation
@@ -145,11 +201,13 @@
             if (!waVal) { addError(wa, 'Nomor WhatsApp wajib diisi.'); valid = false; }
             else if (!/^08\d{8,13}$/.test(waVal)) { addError(wa, 'Format nomor WhatsApp tidak valid. Contoh: 08123456789'); valid = false; }
 
-            // Address if KIRIM_ALAMAT
+            // Address & zone if KIRIM_ALAMAT
             const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
             if (deliveryMethod && deliveryMethod.value === 'KIRIM_ALAMAT') {
                 const address = document.getElementById('shipping_address');
                 if (!address.value.trim()) { addError(address, 'Alamat pengiriman wajib diisi.'); valid = false; }
+                const zone = document.getElementById('shipping_zone_id');
+                if (!zone.value) { addError(zone, 'Zona pengiriman wajib dipilih.'); valid = false; }
             }
 
             if (!valid) e.preventDefault();

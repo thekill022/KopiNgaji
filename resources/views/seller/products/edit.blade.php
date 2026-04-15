@@ -28,6 +28,17 @@
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
 
+                        <!-- Tipe Produk -->
+                        <div class="mb-4">
+                            <x-input-label for="type" :value="__('Tipe Produk')" />
+                            <select id="type" name="type"
+                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
+                                <option value="BARANG" {{ old('type', $product->type) === 'BARANG' ? 'selected' : '' }}>Barang</option>
+                                <option value="JASA" {{ old('type', $product->type) === 'JASA' ? 'selected' : '' }}>Jasa</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('type')" class="mt-2" />
+                        </div>
+
                         <!-- Deskripsi -->
                         <div class="mb-4">
                             <x-input-label for="description" :value="__('Deskripsi')" />
@@ -62,7 +73,7 @@
                             </div>
                             <div>
                                 <x-input-label for="stock" :value="__('Stok')" />
-                                <x-text-input id="stock" name="stock" type="number" class="mt-1 block w-full"
+                                <x-text-input id="stock" name="stock" type="number" step="1" min="0" class="mt-1 block w-full"
                                     :value="old('stock', $product->stock)" required />
                                 <x-input-error :messages="$errors->get('stock')" class="mt-2" />
                             </div>

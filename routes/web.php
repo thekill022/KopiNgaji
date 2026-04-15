@@ -6,6 +6,8 @@ use App\Http\Controllers\Seller\UmkmController;
 use App\Http\Controllers\Seller\ProductController;
 use App\Http\Controllers\Seller\OrderController;
 use App\Http\Controllers\Seller\WithdrawalController;
+use App\Http\Controllers\Seller\ShippingZoneController;
+use App\Http\Controllers\Seller\FinanceReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,18 +17,18 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     // show UMKM listing directly on buyer dashboard
     return redirect()->route('umkms.index');
-})->middleware(['auth', 'verified', 'role:BUYER'])->name('dashboard');
+})->middleware(['auth', 'verified', 'role:BUYER,OWNER'])->name('dashboard');
 
 // buyer-facing UMKM marketplace
 Route::get('/umkms', [\App\Http\Controllers\UmkmController::class, 'index'])
-    ->middleware(['auth', 'verified', 'role:BUYER'])
+    ->middleware(['auth', 'verified', 'role:BUYER,OWNER'])
     ->name('umkms.index');
 Route::get('/umkms/{umkm}', [\App\Http\Controllers\UmkmController::class, 'show'])
-    ->middleware(['auth', 'verified', 'role:BUYER'])
+    ->middleware(['auth', 'verified', 'role:BUYER,OWNER'])
     ->name('umkms.show');
 
 // Buyer Cart
-Route::middleware(['auth', 'verified', 'role:BUYER'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:BUYER,OWNER'])->group(function () {
     Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
     Route::post('/cart', [\App\Http\Controllers\CartController::class, 'store'])->name('cart.store');
     Route::put('/cart/bulk-update', [\App\Http\Controllers\CartController::class, 'bulkUpdate'])->name('cart.bulk-update');
@@ -47,9 +49,11 @@ Route::middleware(['auth', 'verified', 'role:BUYER'])->group(function () {
 // Doku Callback & Redirect endpoints (public)
 Route::post('/doku/notify', [\App\Http\Controllers\OrderController::class, 'dokuNotify'])->name('doku.notify');
 Route::get('/doku/redirect', [\App\Http\Controllers\OrderController::class, 'dokuRedirect'])->name('doku.redirect');
+
 // Seller Routes
 Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('seller.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/finance', [FinanceReportController::class, 'index'])->name('finance.index');
 
     // UMKM registration / management
     Route::get('/umkm/create', [UmkmController::class, 'create'])->name('umkm.create');
@@ -65,8 +69,10 @@ Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('s
     Route::get('orders/scan/qr', [OrderController::class, 'scan'])->name('orders.scan');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('orders/{order}/refund', [OrderController::class, 'refund'])->name('orders.refund');
 
     Route::resource('withdrawals', WithdrawalController::class)->only(['index', 'create', 'store']);
+    Route::resource('shipping-zones', ShippingZoneController::class);
 });
 
 Route::middleware('auth')->group(function () {
