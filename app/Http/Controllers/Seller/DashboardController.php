@@ -15,9 +15,13 @@ class DashboardController extends Controller
         $user = Auth::user();
         $umkm = $user->umkm;
 
-        // let owner know when their UMKM still awaiting verification
-        if ($umkm && ! $umkm->is_verified) {
+        // let owner know when their account or UMKM still awaiting verification
+        if ($user->is_verified && $umkm && ! $umkm->is_verified) {
             session()->flash('warning', 'UMKM Anda belum diverifikasi oleh admin.');
+        } elseif (! $user->is_verified && $umkm && $umkm->is_verified) {
+            session()->flash('warning', 'Akun Anda belum diverifikasi oleh admin. UMKM tidak dapat berjualan sampai akun diverifikasi.');
+        } elseif (! $user->is_verified && $umkm && ! $umkm->is_verified) {
+            session()->flash('warning', 'Akun dan UMKM Anda belum diverifikasi oleh admin.');
         }
 
         $totalRevenue = 0;

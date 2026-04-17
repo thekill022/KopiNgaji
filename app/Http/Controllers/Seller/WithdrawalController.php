@@ -61,6 +61,7 @@ class WithdrawalController extends Controller
     {
         $user = Auth::user();
         if (!$user->umkm) abort(403, 'Akses ditolak. Anda belum memiliki UMKM.');
+        if (!$user->is_verified) abort(403, 'Akses ditolak. Akun Anda belum diverifikasi oleh admin.');
 
         $withdrawals      = Withdrawal::where('owner_id', $user->id)->latest()->paginate(10);
         $data             = $this->earningsData();
@@ -73,6 +74,7 @@ class WithdrawalController extends Controller
     {
         $user = Auth::user();
         if (!$user->umkm) abort(403, 'Akses ditolak.');
+        if (!$user->is_verified) abort(403, 'Akses ditolak. Akun Anda belum diverifikasi oleh admin.');
 
         $hasPending = Withdrawal::where('owner_id', $user->id)->where('status', 'PENDING')->exists();
         if ($hasPending) {
@@ -94,6 +96,7 @@ class WithdrawalController extends Controller
     {
         $user = Auth::user();
         if (!$user->umkm) abort(403);
+        if (!$user->is_verified) abort(403, 'Akses ditolak. Akun Anda belum diverifikasi oleh admin.');
 
         $hasPending = Withdrawal::where('owner_id', $user->id)->where('status', 'PENDING')->exists();
         if ($hasPending) {

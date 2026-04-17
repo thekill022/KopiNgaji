@@ -12,10 +12,15 @@ class ShippingZoneController extends Controller
 {
     private function getUmkm()
     {
-        $umkm = Auth::user()->umkm;
+        $user = Auth::user();
+        $umkm = $user->umkm;
 
         if (! $umkm) {
             abort(403, 'UMKM belum terdaftar.');
+        }
+
+        if (! $user->is_verified) {
+            abort(403, 'Akun Anda belum diverifikasi oleh admin.');
         }
 
         if (! $umkm->is_verified) {
