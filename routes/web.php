@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\RegionController;
 use App\Http\Controllers\Seller\DashboardController;
 use App\Http\Controllers\Seller\UmkmController;
 use App\Http\Controllers\Seller\ProductController;
@@ -40,16 +42,28 @@ Route::middleware(['auth', 'verified', 'role:BUYER,OWNER'])->group(function () {
     
     Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/complete', [\App\Http\Controllers\OrderController::class, 'complete'])->name('orders.complete');
     Route::post('/orders/{order}/refund', [\App\Http\Controllers\OrderController::class, 'requestRefund'])->name('orders.refund');
     
     Route::get('/products/{product}', [\App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
     Route::get('/reports/create', [\App\Http\Controllers\ReportController::class, 'create'])->name('reports.create');
     Route::post('/reports', [\App\Http\Controllers\ReportController::class, 'store'])->name('reports.store');
+
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 });
 
 // Doku Callback & Redirect endpoints (public)
 Route::post('/doku/notify', [\App\Http\Controllers\OrderController::class, 'dokuNotify'])->name('doku.notify');
 Route::get('/doku/redirect', [\App\Http\Controllers\OrderController::class, 'dokuRedirect'])->name('doku.redirect');
+
+// Region API (public, used by AlpineJS cascade selects)
+Route::prefix('api/regions')->group(function () {
+    Route::get('/provinces', [RegionController::class, 'provinces'])->name('regions.provinces');
+    Route::get('/provinces/{province}/cities', [RegionController::class, 'cities'])->name('regions.cities');
+    Route::get('/cities/{city}/districts', [RegionController::class, 'districts'])->name('regions.districts');
+    Route::get('/districts/{district}/villages', [RegionController::class, 'villages'])->name('regions.villages');
+});
 
 // Seller Routes
 Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('seller.')->group(function () {
@@ -70,6 +84,7 @@ Route::middleware(['auth', 'verified', 'role:OWNER'])->prefix('seller')->name('s
     Route::get('orders/scan/qr', [OrderController::class, 'scan'])->name('orders.scan');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('orders/{order}/notify-complete', [OrderController::class, 'notifyComplete'])->name('orders.notify-complete');
     Route::post('orders/{order}/refund', [OrderController::class, 'refund'])->name('orders.refund');
 
     Route::resource('withdrawals', WithdrawalController::class)->only(['index', 'create', 'store']);

@@ -29,6 +29,12 @@ class CheckoutController extends Controller
         $firstItem = $cart->items->first();
         $umkmId = $firstItem->product->umkm_id;
 
+        // Prevent owner from checking out their own UMKM
+        $umkm = $firstItem->product->umkm;
+        if ($umkm && $umkm->owner_id === auth()->id()) {
+            return redirect()->route('cart.index')->with('error', 'Anda tidak dapat melakukan checkout untuk produk dari UMKM Anda sendiri.');
+        }
+
         $totalPrice = 0;
         foreach ($cart->items as $item) {
             if ($item->product->umkm_id == $umkmId) {
@@ -60,6 +66,12 @@ class CheckoutController extends Controller
         $user = auth()->user();
         $firstItem = $cart->items->first();
         $umkmId = $firstItem->product->umkm_id;
+
+        // Prevent owner from checking out their own UMKM
+        $umkm = $firstItem->product->umkm;
+        if ($umkm && $umkm->owner_id === auth()->id()) {
+            return redirect()->route('cart.index')->with('error', 'Anda tidak dapat melakukan checkout untuk produk dari UMKM Anda sendiri.');
+        }
 
         $subtotal = 0;
         foreach ($cart->items as $item) {

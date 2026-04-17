@@ -40,7 +40,12 @@ class CartController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $product = Product::with('umkm')->findOrFail($request->product_id);
+
+        // Prevent owner from buying their own product
+        if ($product->umkm && $product->umkm->owner_id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat membeli produk dari UMKM Anda sendiri.');
+        }
 
         // Check product is active and approved
         if (!$product->is_active || $product->status !== 'APPROVED') {

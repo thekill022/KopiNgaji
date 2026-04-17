@@ -89,6 +89,33 @@ class OrderController extends Controller
         return response()->json(['status' => 'OK']);
     }
 
+    /**
+     * Buyer completes their order manually.
+     */
+    public function complete(Order $order)
+    {
+        if ($order->buyer_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to this order.');
+        }
+
+        $allowed = match ($order->status) {
+            'PENDING' => $order->payment_method === 'CASH',
+            'PAID' => true,
+            default => false,
+        };
+
+        if (!$allowed) {
+            return back()->with('error', 'Pesanan ini tidak dapat diselesaikan saat ini.');
+        }
+
+        $order->update([
+            'status' => 'COMPLETED',
+            'buyer_completed_at' => now(),
+        ]);
+
+        return redirect()->route('orders.show', $order)->with('success', 'Pesanan berhasil diselesaikan. Terima kasih!');
+    }
+
     // Helper to simulate Doku redirect
     public function dokuRedirect(Request $request)
     {

@@ -30,6 +30,7 @@ It is built on **Laravel 11** with **PHP 8.2+**, styled with **TailwindCSS + Alp
 | Auth Scaffolding | Laravel Breeze 2.x (Blade) |
 | Payment Gateway | DOKU (Sandbox / Production) |
 | QR Code Generator | `simplesoftwareio/simple-qrcode` ^4.2 |
+| Indonesia Regions | `laravolt/indonesia` ^0.41 |
 | Testing | PHPUnit 10.5 |
 
 ### Key Environment Variables
@@ -100,8 +101,9 @@ There are **3 roles** stored in `users.role`:
    - Buyer selects zone during checkout if choosing delivery `KIRIM_ALAMAT`
 6. **Order Management**
    - View orders for their UMKM
-   - Update status (`COMPLETED` or `CANCELLED`) with transition guards
-   - **QR Scan** page to verify buyer orders in person
+   - Update status (`CANCELLED`) with transition guards
+   - **QR Scan** page to verify buyer orders in person — scanning unlocks the `COMPLETED` button on the order detail page
+   - **Kirim Notifikasi Selesai** — sends a Web Push to the buyer so the buyer can mark the order as `COMPLETED`
    - **Refund orders** — for CASH orders refund is immediate; for NON_CASH it creates a PENDING refund request for admin to process manually via DOKU
 7. **Financial Reports**
    - View income statement (revenue, COGS, refunds, net profit)
@@ -148,6 +150,10 @@ CartItem (*) ──> (1) Product
 #### `umkms`
 - `owner_id` → FK users
 - `is_verified`: boolean (default false) — **gatekeeper for seller features**
+- `province_id`, `city_id`, `district_id`, `village_id` → nullable strings (linked to `laravolt/indonesia` tables)
+- `address`: text (nullable)
+- `latitude`: decimal(10,8) (nullable)
+- `longitude`: decimal(11,8) (nullable)
 - `platform_fee_type`: `percentage` | `flat`
 - `platform_fee_rate`: decimal(5,2)
 - `platform_fee_flat`: decimal(12,2)
@@ -206,6 +212,9 @@ CartItem (*) ──> (1) Product
 - One cart per user
 - Cart items link to products with quantity
 
+#### Region Tables (`laravolt/indonesia`)
+- `provinces`, `cities`, `districts`, `villages` — auto-managed by the package.
+
 ---
 
 ## 6. Routing Structure
@@ -239,6 +248,14 @@ CartItem (*) ──> (1) Product
 | POST `/doku/notify` | `OrderController@dokuNotify` | doku.notify |
 | GET `/doku/redirect` | `OrderController@dokuRedirect` | doku.redirect |
 
+### Region API (public)
+| Route | Controller | Name |
+|-------|------------|------|
+| GET `/api/regions/provinces` | `RegionController@provinces` | regions.provinces |
+| GET `/api/regions/provinces/{province}/cities` | `RegionController@cities` | regions.cities |
+| GET `/api/regions/cities/{city}/districts` | `RegionController@districts` | regions.districts |
+| GET `/api/regions/districts/{district}/villages` | `RegionController@villages` | regions.villages |
+
 ### Seller Routes (`auth`, `verified`, `role:OWNER`, prefix `seller`)
 | Route | Controller | Name |
 |-------|------------|------|
@@ -268,7 +285,20 @@ CartItem (*) ──> (1) Product
 
 ---
 
-## 7. Critical Business Rules
+## 7. New Features & Rules
+
+### Nearby UMKM (Buyer)
+- Buyers can click "Cari UMKM Terdekat" on the UMKM listing page.
+- The browser requests geolocation permission; if granted, the page reloads with `?lat=...&lng=...`.
+- `UmkmController@index` uses the **Haversine formula** to sort verified UMKMs by distance (only those with `latitude` and `longitude` set).
+- Distance is displayed in km on each UMKM card.
+
+### Shipping Zones (Seller)
+- Sellers define shipping zones by selecting **Kecamatan** (district) via a cascade UI: Province → City → District checklist.
+- `shipping_zone_areas` now stores `district_id` (reference to `laravolt/indonesia` `districts` table) alongside `area_name`.
+- Old text-based areas remain visible but new zones use real district data.
+
+## 8. Critical Business Rules
 
 ### Order Status Transitions (Seller)
 Handled in `Seller\OrderController@updateStatus`:
@@ -296,6 +326,11 @@ When buyer visits `/cart`, items whose product is inactive or not approved are a
 ### Checkout Constraint
 The cart is filtered to **only the first UMKM's products** during checkout.  
 Mixed-UMKM carts are not fully supported; items from other UMKMs are ignored in the checkout logic.
+
+### Owner Self-Purchase Restriction
+An `OWNER` **cannot** add their own UMKM's products to the cart or checkout from their own store. This is enforced in:
+- `CartController@store` — rejects adding product to cart.
+- `CheckoutController@index` and `@store` — redirects back with error if cart contains products from their own UMKM.
 
 ### Stock Management
 Stock is decremented at checkout time (`CheckoutController@store`). If stock is insufficient, checkout fails with an error.
@@ -361,11 +396,22 @@ $availableBalance = $totalEarnings - $totalWithdrawn;
 
 ---
 
-## 10. QR Code Feature
+## 10. QR Code & Order Completion Flow
 
+### QR Code Feature
 - Each order has a `qr_code` field populated with the invoice number (`INV-{random}`).
 - Sellers can open `/seller/orders/scan/qr` to scan a buyer's QR code.
-- When scanned and matched, the seller can verify and update the order status.
+- When scanned and matched, the seller can verify and update the order status directly to `COMPLETED`.
+
+### Order Completion Methods
+1. **QR Scan (Seller)** — Seller scans buyer's QR code and is redirected to the order detail with `?scanned=true`. A **"Selesaikan Pesanan"** button appears only in this context; pressing it marks the order `COMPLETED` and sets `is_scanned = true`. There is no direct completion button on the seller orders list.
+2. **Buyer Manual Completion (Non-QR)** — If the seller is not present to scan, the buyer must wait for the seller to confirm delivery first. Once the seller presses **"Kirim Notifikasi Selesai"**, the buyer's order detail will reveal the **"Selesaikan Pesanan"** button. Only then can the buyer mark the order as `COMPLETED`.
+3. **Seller Notification (Web Push)** — If the buyer hasn't completed the order, the seller can press **"Kirim Notifikasi Selesai"** from the seller order detail. This updates `seller_completion_notified_at`, unlocks the completion button on the buyer's order detail, and sends a **native Web Push notification** to the buyer's browser (if permission is granted).
+
+### Web Push Setup
+- Uses `minishlink/web-push` PHP library and browser Service Worker (`public/sw.js`).
+- Requires `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` in `.env`.
+- Buyer subscriptions are stored in `push_subscriptions` table.
 
 ---
 
@@ -425,11 +471,12 @@ php artisan test
 2. **Single-UMKM Checkout** — if cart contains products from multiple UMKMs, only the first UMKM's products are checked out.
 3. **No Admin Panel (yet)** — product approval (`status = APPROVED`) and UMKM verification (`is_verified = true`) likely require direct DB manipulation or an admin panel that is not yet built.
 4. **DOKU Integration is Sandbox-ready** — signature verification on notify is simplified for development.
-5. **No API routes** — all interactions are server-rendered Blade views with minimal AJAX (cart bulk update, toggle active).
+5. **Minimal API routes** — primarily server-rendered Blade views. Exception: public `/api/regions/*` endpoints for province/city/district/village data consumed by AlpineJS cascade selects.
 6. **Report review workflow** — reports are stored with `status = PENDING`; no admin review UI exists yet.
 7. **Dual-role sellers** — `OWNER` users can browse the buyer marketplace and place orders. Navigation includes "Mode Pembeli" (seller nav) and "Mode Seller" (buyer nav dropdown).
-8. **Shipping zones** — each UMKM can define multiple custom zones with costs. Buyer selects zone during checkout for `KIRIM_ALAMAT`.
-9. **Refund admin process** — non-cash refunds create a `PENDING` record. An admin must manually process via DOKU and then update the refund status (currently no admin UI; use DB/tinker).
+8. **Shipping zones** — each UMKM can define multiple custom zones with costs. Zones are defined by selecting real Indonesian districts (Kecamatan) via cascade select. Buyer selects zone during checkout for `KIRIM_ALAMAT`.
+9. **Nearby UMKM** — requires UMKM owners to set their latitude/longitude in their profile. Buyers without geolocation permission will see the default listing.
+10. **Refund admin process** — non-cash refunds create a `PENDING` record. An admin must manually process via DOKU and then update the refund status (currently no admin UI; use DB/tinker).
 
 ---
 

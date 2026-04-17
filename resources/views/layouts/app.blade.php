@@ -96,6 +96,56 @@
             </div>
         </footer>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const vapidPublicKey = '{{ env('VAPID_PUBLIC_KEY') }}';
+        if (!vapidPublicKey || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+            return;
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+        }
+
+        async function subscribeUserToPush() {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                let subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    await subscription.unsubscribe();
+                }
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+                });
+
+                await fetch('{{ route('push-subscriptions.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(subscription.toJSON())
+                });
+            } catch (err) {
+                console.error('Push subscription failed:', err);
+            }
+        }
+
+        window.requestPushNotification = async function() {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                await subscribeUserToPush();
+                return true;
+            }
+            return false;
+        };
+    });
+    </script>
 </body>
 
 </html>

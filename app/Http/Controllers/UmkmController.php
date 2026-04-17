@@ -10,6 +10,8 @@ class UmkmController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $lat = $request->get('lat');
+        $lng = $request->get('lng');
 
         $query = Umkm::where('is_verified', true);
 
@@ -21,7 +23,16 @@ class UmkmController extends Controller
             });
         }
 
-        $umkms = $query->latest()->paginate(12)->withQueryString();
+        if ($lat && $lng) {
+            $query->whereNotNull('latitude')->whereNotNull('longitude')
+                ->select('*')
+                ->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance", [$lat, $lng, $lat])
+                ->orderBy('distance');
+        } else {
+            $query->latest();
+        }
+
+        $umkms = $query->paginate(12)->withQueryString();
 
         // if user searched, optionally also fetch matching products across verified UMKMs
         $products = collect();
@@ -43,6 +54,7 @@ class UmkmController extends Controller
                     'name' => $u->name,
                     'description' => $u->description,
                     'url' => route('umkms.show', $u),
+                    'distance' => $u->distance ?? null,
                 ]),
                 'products' => $products instanceof \Illuminate\Pagination\LengthAwarePaginator
                     ? $products->map(fn($p) => [
@@ -62,7 +74,7 @@ class UmkmController extends Controller
             ]);
         }
 
-        return view('umkms.index', compact('umkms', 'search', 'products'));
+        return view('umkms.index', compact('umkms', 'search', 'products', 'lat', 'lng'));
     }
 
     public function show(Umkm $umkm, Request $request)

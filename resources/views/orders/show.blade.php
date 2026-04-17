@@ -66,17 +66,57 @@
                     </div>
                 </div>
 
-                <!-- QR Code Validasi Pesanan -->
+                <!-- QR Code Validasi Pesanan & Completion -->
                 <div class="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center">
-                    @if($order->status === 'PAID' || $order->payment_method === 'CASH')
+                    @if($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'))
                         <h2 class="text-lg font-bold text-slate-800 mb-2">QR Code Pesanan</h2>
-                        <p class="text-slate-500 text-xs mb-6 max-w-xs leading-relaxed">
+                        <p class="text-slate-500 text-xs mb-4 max-w-xs leading-relaxed">
                             Tunjukkan QR Code ini kepada pemilik/kasir UMKM untuk <strong>memvalidasi pesanan dan menyelesaikan transaksi</strong>.
                         </p>
                         <div class="bg-white p-4 rounded-2xl shadow-sm inline-block">
-                            {!! QrCode::size(200)->generate(route('seller.orders.show', ['order' => $order->id, 'scanned' => 'true'])) !!}
+                            {!! QrCode::size(180)->generate(route('seller.orders.show', ['order' => $order->id, 'scanned' => 'true'])) !!}
                         </div>
-                        <p class="mt-4 text-indigo-600 font-bold font-mono tracking-widest">{{ $order->qr_code }}</p>
+                        <p class="mt-3 text-indigo-600 font-bold font-mono tracking-widest text-sm">{{ $order->qr_code }}</p>
+
+                        @if($order->seller_completion_notified_at && !$order->buyer_completed_at)
+                            <div class="mt-4 w-full bg-amber-50 border border-amber-100 rounded-xl p-3">
+                                <p class="text-sm text-amber-700 font-medium"><i class="fa-solid fa-bell mr-1"></i> Penjual telah mengkonfirmasi pengiriman. Silakan tekan "Selesai" jika pesanan sudah diterima.</p>
+                            </div>
+
+                            <form method="POST" action="{{ route('orders.complete', $order) }}" class="mt-4 w-full max-w-xs">
+                                @csrf
+                                <button type="submit" class="w-full px-5 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-md">
+                                    <i class="fa-solid fa-check-circle mr-2"></i> Selesaikan Pesanan
+                                </button>
+                            </form>
+                        @elseif(!$order->seller_completion_notified_at)
+                            <div class="mt-4 w-full bg-slate-100 border border-slate-200 rounded-xl p-3">
+                                <p class="text-sm text-slate-600 font-medium"><i class="fa-solid fa-clock mr-1"></i> Menunggu konfirmasi pengiriman dari penjual.</p>
+                            </div>
+                        @endif
+
+                        <div id="push-enable-banner" class="mt-4 w-full max-w-xs bg-blue-50 border border-blue-100 rounded-xl p-3 hidden">
+                            <p class="text-sm text-blue-700 font-medium mb-2">
+                                <i class="fa-solid fa-bell mr-1"></i> Aktifkan notifikasi agar mendapat update dari penjual.
+                            </p>
+                            <button type="button" onclick="enablePush()" class="w-full text-sm px-3 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                                Izinkan Notifikasi
+                            </button>
+                        </div>
+                        <script>
+                        function enablePush() {
+                            if (typeof window.requestPushNotification === 'function') {
+                                window.requestPushNotification().then(granted => {
+                                    if (granted) {
+                                        document.getElementById('push-enable-banner').classList.add('hidden');
+                                    }
+                                });
+                            }
+                        }
+                        if (('Notification' in window) && Notification.permission === 'default') {
+                            document.getElementById('push-enable-banner').classList.remove('hidden');
+                        }
+                        </script>
                     @elseif($order->status === 'PENDING' && $order->payment_method === 'NON_CASH')
                         <h2 class="text-lg font-bold text-slate-800 mb-2">Selesaikan Pembayaran</h2>
                         <p class="text-slate-500 text-xs mb-6 max-w-xs leading-relaxed">
@@ -91,6 +131,12 @@
                                 Bayar Sekarang
                             </a>
                         @endif
+                    @elseif($order->status === 'COMPLETED')
+                        <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-check text-emerald-600 text-3xl"></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-800 mb-1">Pesanan Selesai</h2>
+                        <p class="text-slate-500 text-xs max-w-xs leading-relaxed">Terima kasih telah berbelanja di KopiNgaji.</p>
                     @endif
                 </div>
             </div>

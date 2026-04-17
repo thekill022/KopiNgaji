@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ShippingZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Laravolt\Indonesia\Models\District;
 
 class ShippingZoneController extends Controller
 {
@@ -27,7 +28,7 @@ class ShippingZoneController extends Controller
     public function index()
     {
         $umkm = $this->getUmkm();
-        $shippingZones = $umkm->shippingZones()->with('areas')->latest()->paginate(10);
+        $shippingZones = $umkm->shippingZones()->with('areas.district')->latest()->paginate(10);
         return view('seller.shipping-zones.index', compact('shippingZones'));
     }
 
@@ -44,11 +45,11 @@ class ShippingZoneController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'cost' => 'required|numeric|min:0',
-            'areas' => 'required|array|min:1',
-            'areas.*' => 'required|string|max:255',
+            'district_ids' => 'required|array|min:1',
+            'district_ids.*' => 'required|string',
         ], [
-            'areas.required' => 'Minimal satu area pengiriman wajib diisi.',
-            'areas.*.required' => 'Nama area tidak boleh kosong.',
+            'district_ids.required' => 'Minimal satu kecamatan wajib dipilih.',
+            'district_ids.*.required' => 'Kecamatan tidak valid.',
         ]);
 
         $zone = $umkm->shippingZones()->create([
@@ -56,8 +57,13 @@ class ShippingZoneController extends Controller
             'cost' => $validated['cost'],
         ]);
 
-        foreach ($validated['areas'] as $areaName) {
-            $zone->areas()->create(['area_name' => $areaName]);
+        $districts = District::whereIn('code', $validated['district_ids'])->pluck('name', 'code');
+
+        foreach ($validated['district_ids'] as $districtId) {
+            $zone->areas()->create([
+                'district_id' => $districtId,
+                'area_name' => $districts[$districtId] ?? $districtId,
+            ]);
         }
 
         return redirect()->route('seller.shipping-zones.index')->with('success', 'Zona pengiriman berhasil ditambahkan.');
@@ -71,8 +77,13 @@ class ShippingZoneController extends Controller
             abort(403);
         }
 
-        $shippingZone->load('areas');
-        return view('seller.shipping-zones.edit', compact('shippingZone'));
+        $shippingZone->load('areas.district.city');
+
+        $defaultDistrict = $shippingZone->areas->first()?->district;
+        $defaultCityId = $defaultDistrict?->city_code;
+        $defaultProvinceId = $defaultDistrict?->city?->province_code;
+
+        return view('seller.shipping-zones.edit', compact('shippingZone', 'defaultCityId', 'defaultProvinceId'));
     }
 
     public function update(Request $request, ShippingZone $shippingZone)
@@ -86,11 +97,11 @@ class ShippingZoneController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'cost' => 'required|numeric|min:0',
-            'areas' => 'required|array|min:1',
-            'areas.*' => 'required|string|max:255',
+            'district_ids' => 'required|array|min:1',
+            'district_ids.*' => 'required|string',
         ], [
-            'areas.required' => 'Minimal satu area pengiriman wajib diisi.',
-            'areas.*.required' => 'Nama area tidak boleh kosong.',
+            'district_ids.required' => 'Minimal satu kecamatan wajib dipilih.',
+            'district_ids.*.required' => 'Kecamatan tidak valid.',
         ]);
 
         $shippingZone->update([
@@ -98,9 +109,14 @@ class ShippingZoneController extends Controller
             'cost' => $validated['cost'],
         ]);
 
+        $districts = District::whereIn('code', $validated['district_ids'])->pluck('name', 'code');
+
         $shippingZone->areas()->delete();
-        foreach ($validated['areas'] as $areaName) {
-            $shippingZone->areas()->create(['area_name' => $areaName]);
+        foreach ($validated['district_ids'] as $districtId) {
+            $shippingZone->areas()->create([
+                'district_id' => $districtId,
+                'area_name' => $districts[$districtId] ?? $districtId,
+            ]);
         }
 
         return redirect()->route('seller.shipping-zones.index')->with('success', 'Zona pengiriman berhasil diperbarui.');

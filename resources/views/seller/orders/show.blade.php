@@ -147,21 +147,32 @@
             <!-- Action Buttons -->
             @if(in_array($order->status, ['PENDING', 'PAID']))
                 @php
-                    $canComplete = $order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH');
+                    $canNotifyComplete = $order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH');
                     $canCancel = $order->payment_method === 'CASH' && $order->status === 'PENDING';
                 @endphp
                 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Aksi Pesanan</h3>
                     <div class="flex flex-wrap gap-3">
-                        @if($canComplete)
-                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" id="complete-form">
+                        @if(request('scanned') === 'true' && $canNotifyComplete)
+                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" id="qr-complete-form">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="status" value="COMPLETED">
-                                <button type="button" onclick="document.getElementById('confirm-complete-modal').classList.remove('hidden')"
+                                <input type="hidden" name="source" value="qr">
+                                <button type="button" onclick="document.getElementById('confirm-qr-complete-modal').classList.remove('hidden')"
                                     class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-wider hover:bg-green-700 transition shadow-sm shadow-green-200">
                                     <i class="fa-solid fa-circle-check"></i> Selesaikan Pesanan
+                                </button>
+                            </form>
+                        @endif
+
+                        @if($canNotifyComplete)
+                            <form method="POST" action="{{ route('seller.orders.notify-complete', $order) }}" id="notify-complete-form">
+                                @csrf
+                                <button type="button" onclick="document.getElementById('confirm-notify-complete-modal').classList.remove('hidden')"
+                                    class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 border border-transparent rounded-lg font-bold text-sm text-white uppercase tracking-wider hover:bg-blue-700 transition shadow-sm shadow-blue-200">
+                                    <i class="fa-solid fa-paper-plane"></i> Kirim Notifikasi Selesai
                                 </button>
                             </form>
                         @endif
@@ -187,24 +198,49 @@
                     </div>
                 </div>
 
-                <!-- Confirm Complete Modal -->
-                @if($canComplete)
-                <div id="confirm-complete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <!-- Confirm Notify Complete Modal -->
+                @if($canNotifyComplete)
+                <div id="confirm-notify-complete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6">
+                        <div class="text-center">
+                            <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-paper-plane text-blue-600 text-2xl"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Kirim Notifikasi Selesai?</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Pembeli akan menerima notifikasi untuk menyelesaikan pesanan #{{ $order->id }}.</p>
+                            <div class="flex gap-3 justify-center">
+                                <button onclick="document.getElementById('confirm-notify-complete-modal').classList.add('hidden')"
+                                    class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    Batal
+                                </button>
+                                <button onclick="document.getElementById('notify-complete-form').submit()"
+                                    class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition">
+                                    Ya, Kirim
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Confirm QR Complete Modal -->
+                @if(request('scanned') === 'true' && $canNotifyComplete)
+                <div id="confirm-qr-complete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6">
                         <div class="text-center">
                             <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i class="fa-solid fa-circle-check text-green-600 text-2xl"></i>
                             </div>
                             <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Selesaikan Pesanan?</h4>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Pesanan #{{ $order->id }} akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan.</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Pesanan #{{ $order->id }} akan diselesaikan setelah scan QR.</p>
                             <div class="flex gap-3 justify-center">
-                                <button onclick="document.getElementById('confirm-complete-modal').classList.add('hidden')"
+                                <button onclick="document.getElementById('confirm-qr-complete-modal').classList.add('hidden')"
                                     class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                     Batal
                                 </button>
-                                <button onclick="document.getElementById('complete-form').submit()"
+                                <button onclick="document.getElementById('qr-complete-form').submit()"
                                     class="px-5 py-2.5 rounded-lg bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition">
-                                    Ya, Selesaikan
+                                    Ya, Selesai
                                 </button>
                             </div>
                         </div>

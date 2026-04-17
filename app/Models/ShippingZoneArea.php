@@ -15,4 +15,9 @@ class ShippingZoneArea extends Model
     {
         return $this->belongsTo(ShippingZone::class);
     }
+
+    public function district()
+    {
+        return $this->belongsTo(\Laravolt\Indonesia\Models\District::class, 'district_id', 'code');
+    }
 }

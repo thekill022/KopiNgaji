@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Refund;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -100,11 +101,55 @@ class OrderController extends Controller
             return back()->with('error', 'Transisi status tidak diizinkan.');
         }
 
-        $order->update(['status' => $newStatus]);
+        // Direct completion by seller is only allowed via QR scan
+        if ($newStatus === 'COMPLETED' && $request->input('source') !== 'qr') {
+            return back()->with('error', 'Penyelesaian pesanan hanya dapat dilakukan melalui scan QR.');
+        }
+
+        $updateData = ['status' => $newStatus];
+        if ($newStatus === 'COMPLETED') {
+            $updateData['is_scanned'] = true;
+        }
+
+        $order->update($updateData);
 
         $message = $newStatus === 'COMPLETED' ? 'Pesanan berhasil diselesaikan.' : 'Pesanan berhasil dibatalkan.';
 
         return redirect()->route('seller.orders.show', $order)->with('success', $message);
+    }
+
+    /**
+     * Seller notifies buyer to complete the order.
+     */
+    public function notifyComplete(Order $order)
+    {
+        $umkm = $this->getUmkm();
+
+        if ($order->umkm_id !== $umkm->id) {
+            abort(403);
+        }
+
+        $allowed = match ($order->status) {
+            'PENDING' => $order->payment_method === 'CASH',
+            'PAID' => true,
+            default => false,
+        };
+
+        if (!$allowed) {
+            return back()->with('error', 'Pesanan ini tidak dapat dikirimi notifikasi penyelesaian saat ini.');
+        }
+
+        $order->update(['seller_completion_notified_at' => now()]);
+
+        WebPushService::sendToUser(
+            $order->buyer_id,
+            'Pesanan Siap Diselesaikan',
+            "Penjual {$order->umkm->name} mengkonfirmasi pesanan Anda. Silakan tekan 'Selesai' jika sudah diterima.",
+            ['url' => route('orders.show', $order)]
+        );
+
+        return redirect()->route('seller.orders.show', $order)
+            ->with('success', 'Notifikasi penyelesaian telah dikirim ke pembeli.');
     }
 
     public function refund(Request $request, Order $order)

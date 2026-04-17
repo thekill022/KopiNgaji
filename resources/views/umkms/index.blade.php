@@ -30,6 +30,20 @@
                     </div>
                 </div>
             </form>
+
+            <div class="mt-6 max-w-3xl mx-auto flex flex-wrap items-center justify-center gap-3">
+                <button type="button" id="nearby-btn" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 text-sm font-semibold rounded-full shadow-md hover:bg-indigo-50 hover:shadow-lg transition">
+                    <i class="fa-solid fa-location-arrow"></i>
+                    <span>Cari UMKM Terdekat</span>
+                </button>
+                @if ($lat && $lng)
+                    <a href="{{ route('umkms.index', ['search' => $search]) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-full shadow-md hover:bg-indigo-700 hover:shadow-lg transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Reset Lokasi</span>
+                    </a>
+                @endif
+            </div>
+            <p id="nearby-error" class="mt-3 text-red-200 text-sm hidden"></p>
         </div>
     </div>
 
@@ -41,11 +55,19 @@
                         <i class="fa-solid fa-box-open text-4xl text-slate-300"></i>
                     </div>
                     <h3 class="text-xl font-bold text-slate-700 mb-2">Tidak ada UMKM ditemukan</h3>
-                    <p>Coba gunakan kata kunci lain untuk mencari.</p>
+                    <p>
+                        @if ($lat && $lng)
+                            Belum ada UMKM mitra yang memiliki data lokasi di sekitar Anda.
+                        @else
+                            Coba gunakan kata kunci lain untuk mencari.
+                        @endif
+                    </p>
                 </div>
             @else
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-slate-800 tracking-tight">Eksplorasi UMKM</h3>
+                    <h3 class="text-2xl font-bold text-slate-800 tracking-tight">
+                        {{ $lat && $lng ? 'UMKM Terdekat' : 'Eksplorasi UMKM' }}
+                    </h3>
                     <span class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"><i class="fa-solid fa-store mr-1"></i> {{ $umkms->total() }} Toko</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -66,6 +88,11 @@
                             @endif
                             <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
                                 <span class="text-indigo-600 font-semibold group-hover:translate-x-1 transition-transform inline-block">Kunjungi Toko <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                                @if($lat && $lng && $umkm->distance !== null)
+                                    <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                                        <i class="fa-solid fa-location-dot mr-1"></i>{{ number_format($umkm->distance, 1) }} km
+                                    </span>
+                                @endif
                             </div>
                         </a>
                     @endforeach
@@ -124,16 +151,27 @@
         const baseUrl = "{{ route('umkms.index') }}";
 
         const fmt = v => new Intl.NumberFormat('id-ID').format(Math.round(v));
+        const latParam = {{ json_encode($lat) }};
+        const lngParam = {{ json_encode($lng) }};
 
         function renderUmkms(list, count) {
-            if (!list.length) return `<div class="bg-white p-12 rounded-3xl shadow-sm text-center border text-slate-500 border-slate-100">
+            if (!list.length) {
+                const nearbyMsg = latParam && lngParam
+                    ? '<p>Belum ada UMKM mitra yang memiliki data lokasi di sekitar Anda.</p>'
+                    : '<p>Coba gunakan kata kunci lain.</p>';
+                return `<div class="bg-white p-12 rounded-3xl shadow-sm text-center border text-slate-500 border-slate-100">
                 <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-box-open text-4xl text-slate-300"></i></div>
-                <h3 class="text-xl font-bold text-slate-700 mb-2">Tidak ada UMKM ditemukan</h3><p>Coba gunakan kata kunci lain.</p></div>`;
+                <h3 class="text-xl font-bold text-slate-700 mb-2">Tidak ada UMKM ditemukan</h3>${nearbyMsg}</div>`;
+            }
+            const hasDistance = list.some(u => u.distance !== null && u.distance !== undefined);
             return `<div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-slate-800 tracking-tight">Eksplorasi UMKM</h3>
+                <h3 class="text-2xl font-bold text-slate-800 tracking-tight">${hasDistance ? 'UMKM Terdekat' : 'Eksplorasi UMKM'}</h3>
                 <span class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"><i class="fa-solid fa-store mr-1"></i> ${count} Toko</span>
-            </div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${list.map(u => `
-                <a href="${u.url}" class="group block bg-white rounded-2xl p-6 shadow-sm hover:shadow-2xl border border-slate-100 transition-all duration-300 hover:-translate-y-2 relative overflow-hidden">
+            </div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${list.map(u => {
+                const distBadge = u.distance !== null && u.distance !== undefined
+                    ? `<span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded"><i class="fa-solid fa-location-dot mr-1"></i>${parseFloat(u.distance).toFixed(1)} km</span>`
+                    : '';
+                return `<a href="${u.url}" class="group block bg-white rounded-2xl p-6 shadow-sm hover:shadow-2xl border border-slate-100 transition-all duration-300 hover:-translate-y-2 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center text-indigo-600 shadow-inner"><i class="fa-solid fa-shop text-2xl"></i></div>
@@ -141,8 +179,9 @@
                     </div>
                     <h3 class="font-bold text-xl text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">${u.name}</h3>
                     ${u.description ? `<p class="text-sm text-slate-500 line-clamp-2 leading-relaxed h-10">${u.description}</p>` : ''}
-                    <div class="mt-5 pt-4 border-t border-slate-100 text-sm"><span class="text-indigo-600 font-semibold">Kunjungi Toko <i class="fa-solid fa-arrow-right ml-1"></i></span></div>
-                </a>`).join('')}</div>`;
+                    <div class="mt-5 pt-4 border-t border-slate-100 text-sm flex items-center justify-between"><span class="text-indigo-600 font-semibold">Kunjungi Toko <i class="fa-solid fa-arrow-right ml-1"></i></span>${distBadge}</div>
+                </a>`;
+            }).join('')}</div>`;
         }
 
         function renderProducts(list) {
@@ -181,7 +220,11 @@
             icon.classList.add('hidden');
             spinner.classList.remove('hidden');
 
-            const url = q ? `${baseUrl}?search=${encodeURIComponent(q)}` : baseUrl;
+            const params = new URLSearchParams();
+            if (q) params.set('search', q);
+            if (latParam) params.set('lat', latParam);
+            if (lngParam) params.set('lng', lngParam);
+            const url = `${baseUrl}${params.toString() ? '?' + params.toString() : ''}`;
             window.history.replaceState({}, '', url);
 
             fetch(url, { headers: { 'Accept': 'application/json' }, signal: abortCtrl.signal })
@@ -199,6 +242,29 @@
                     icon.classList.remove('hidden');
                 })
                 .catch(e => { if (e.name !== 'AbortError') { spinner.classList.add('hidden'); icon.classList.remove('hidden'); }});
+        }
+
+        const nearbyBtn = document.getElementById('nearby-btn');
+        const nearbyError = document.getElementById('nearby-error');
+        if (nearbyBtn) {
+            nearbyBtn.addEventListener('click', function() {
+                if (!navigator.geolocation) {
+                    nearbyError.textContent = 'Browser Anda tidak mendukung geolokasi.';
+                    nearbyError.classList.remove('hidden');
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const q = input.value || '';
+                        const url = `${baseUrl}?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}${q ? '&search=' + encodeURIComponent(q) : ''}`;
+                        window.location.href = url;
+                    },
+                    (err) => {
+                        nearbyError.textContent = 'Gagal mengambil lokasi: ' + err.message;
+                        nearbyError.classList.remove('hidden');
+                    }
+                );
+            });
         }
 
         // Add transition

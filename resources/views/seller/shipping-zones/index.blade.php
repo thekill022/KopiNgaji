@@ -34,7 +34,9 @@
                                             <td class="px-6 py-4 text-gray-700 dark:text-gray-300">
                                                 <div class="flex flex-wrap gap-1">
                                                     @foreach ($zone->areas as $area)
-                                                        <span class="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded">{{ $area->area_name }}</span>
+                                                        <span class="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded">
+                                                            {{ $area->district->name ?? $area->area_name }}
+                                                        </span>
                                                     @endforeach
                                                 </div>
                                             </td>

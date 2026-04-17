@@ -125,21 +125,9 @@
                                     <br><span class="text-xs">{{ $order->created_at->format('H:i') }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('seller.orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
-                                            Detail
-                                        </a>
-                                        @if($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'))
-                                            <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Selesaikan pesanan #{{ $order->id }}?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="COMPLETED">
-                                                <button type="submit" class="text-green-600 hover:text-green-800 text-sm font-medium" title="Selesaikan Pesanan">
-                                                    <i class="fa-solid fa-circle-check"></i>
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
+                                    <a href="{{ route('seller.orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
+                                        Detail
+                                    </a>
                                 </td>
                             </tr>
                         @empty
@@ -185,16 +173,7 @@
                             <span class="font-medium text-gray-900 dark:text-gray-100">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
                             <div class="flex items-center gap-3">
                                 <span class="text-xs text-gray-500">{{ $order->created_at->format('d M Y H:i') }}</span>
-                                @if($order->status === 'PAID' || ($order->status === 'PENDING' && $order->payment_method === 'CASH'))
-                                    <form method="POST" action="{{ route('seller.orders.update-status', $order) }}" onsubmit="return confirm('Selesaikan pesanan #{{ $order->id }}?')">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="COMPLETED">
-                                        <button type="submit" class="text-green-600 hover:text-green-800 text-sm font-bold">
-                                            <i class="fa-solid fa-circle-check"></i>
-                                        </button>
-                                    </form>
-                                @endif
+
                             </div>
                         </div>
                     </a>

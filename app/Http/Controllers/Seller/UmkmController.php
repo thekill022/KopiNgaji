@@ -34,14 +34,23 @@ class UmkmController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'province_id' => 'nullable|string',
+            'city_id' => 'nullable|string',
+            'district_id' => 'nullable|string',
+            'village_id' => 'nullable|string',
+            'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         if (Auth::user()->umkm) {
             return redirect()->route('seller.dashboard');
         }
 
-        // create a new UMKM owned by the authenticated user
-        Auth::user()->umkm()->create($request->only(['name', 'description']));
+        Auth::user()->umkm()->create($request->only([
+            'name', 'description', 'province_id', 'city_id', 'district_id', 'village_id',
+            'address', 'latitude', 'longitude',
+        ]));
 
         return redirect()->route('seller.dashboard')
             ->with('success', 'UMKM berhasil didaftarkan. Silakan tunggu verifikasi oleh admin.');
@@ -52,6 +61,13 @@ class UmkmController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'province_id' => 'nullable|string',
+            'city_id' => 'nullable|string',
+            'district_id' => 'nullable|string',
+            'village_id' => 'nullable|string',
+            'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $umkm = Auth::user()->umkm;
@@ -60,7 +76,10 @@ class UmkmController extends Controller
             return redirect()->route('seller.dashboard')->with('error', 'UMKM belum terdaftar.');
         }
 
-        $umkm->update($request->only(['name', 'description']));
+        $umkm->update($request->only([
+            'name', 'description', 'province_id', 'city_id', 'district_id', 'village_id',
+            'address', 'latitude', 'longitude',
+        ]));
 
         return redirect()->route('seller.umkm.edit')->with('success', 'UMKM berhasil diperbarui.');
     }
